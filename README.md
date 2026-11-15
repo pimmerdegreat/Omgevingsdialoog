@@ -25,7 +25,15 @@ Ondergronden: PDOK (Kaart van Nederland, grijs, pastel, water en luchtfoto) en O
 
 ## Snel bekijken
 
-Het voorbeeldtraject speelt rond 't Goylaan in Utrecht en is gevuld met verzonnen deelnemers.
+De demo staat op https://pimmerdegreat.github.io/Ongevingsdialoog/. Hij draait zonder server en zonder database.
+
+- **Meedoen:** het voorbeeldtraject rond 't Goylaan in Utrecht, gevuld met 148 verzonnen deelnemers.
+- **Beheer:** log in met het wachtwoord `demo`. Je kunt trajecten aanmaken en inrichten, kaartlagen en planonderdelen uit QGIS inlezen, zelf meedoen via de link en de inzendingen bekijken en verwijderen.
+- **Rapport en exports:** van het voorbeeldtraject, inclusief het GeoPackage voor QGIS.
+
+Alles wat je in de demo doet blijft in je eigen browser. Met Demo opnieuw beginnen zet je de beginstand terug. Het rapport en de exports tonen in de demo alleen de voorbeelddata; op de echte server zijn ze er voor elk traject, met alle inzendingen.
+
+Zelf de demo bouwen en bekijken:
 
 ```
 npm install
@@ -33,7 +41,7 @@ npm run demo
 npx vite preview --config web/vite.config.ts --outDir ../dist/demo
 ```
 
-De demo draait zonder server en zonder database. Dezelfde demo kan op GitHub Pages staan: zet in de repository bij Settings, Pages de bron op GitHub Actions. De workflow in `.github/workflows/pages.yml` doet de rest bij elke wijziging op `main`.
+De workflow in `.github/workflows/pages.yml` zet de demo bij elke wijziging op `main` opnieuw op GitHub Pages.
 
 ## Installeren op de server
 
@@ -60,7 +68,8 @@ De database richt je eenmalig in met `server/installatie.sql`. De tabellen en de
 |---|---|
 | `server/` | De server: API voor deelnemers en beheer, controle van invoer, exports en het rapport |
 | `server/rapport/` | Het resultatenrapport: cijfers, opmaak en het kaartscript |
-| `server/seed/` | Het voorbeeldtraject en de verzonnen voorbeelddata |
+| `server/seed/` | Het voorbeeldtraject, de verzonnen voorbeelddata en het bouwen van de demo |
+| `web/src/demo.ts` | De nagebootste server voor de demo zonder server |
 | `web/` | De website: startpagina, meedoen en beheer (Vue en Leaflet) |
 | `gedeeld/` | Huisstijl, ondergronden en keuzelijsten die server, website en rapport delen |
 | `docs/` | Installatie en gebruik in QGIS |

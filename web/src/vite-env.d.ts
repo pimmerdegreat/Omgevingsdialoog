@@ -31,3 +31,4 @@ declare module '*/gedeeld/constanten.js' {
 	export const CATEGORIEKLEUREN: string[];
 	export const STATUSSEN: { id: string; label: string; uitleg: string }[];
 }
+

@@ -1524,3 +1524,28 @@ fieldset {
 .tabel td {
 	white-space: nowrap;
 }
+
+/* Melding in beheer dat dit de demo is. */
+.demobalk {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.25rem 1rem;
+	margin: 1rem max(var(--marge), calc((100% - 1180px) / 2)) 0;
+	padding: 0.6rem 1rem;
+	border-radius: var(--hoek);
+	background: var(--oker-tint);
+	color: #6b4d00;
+	font-size: 0.95rem;
+}
+
+.demobalk p {
+	margin: 0;
+	max-width: none;
+}
+
+.demobalk .tekstknop {
+	color: #6b4d00;
+	font-weight: 600;
+}

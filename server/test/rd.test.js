@@ -1,7 +1,7 @@
 // Test voor de omrekening van RD New naar graden, zoals beheer die gebruikt bij bestanden uit QGIS.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { rdNaarWgs } from '../../web/src/kaart/rd.ts';
+import { rdNaarWgs, wgsNaarRd } from '../../gedeeld/rd.js';
 
 // Referentiepunten: de oorsprong van het RD-stelsel in Amersfoort en vier plekken verspreid over Nederland,
 // vergeleken met de omrekening door PostGIS (EPSG:28992 naar EPSG:4326).
@@ -19,5 +19,13 @@ test('RD New naar graden klopt tot op een meter', () => {
 		// 0,00001 graad is ongeveer een meter.
 		assert.ok(Math.abs(lng - lengte) < 0.00001, `lengtegraad bij ${x}, ${y}: ${lng}`);
 		assert.ok(Math.abs(lat - breedte) < 0.00001, `breedtegraad bij ${x}, ${y}: ${lat}`);
+	}
+});
+
+test('graden naar RD New en terug komt op hetzelfde punt uit', () => {
+	for (const [x, y] of PUNTEN) {
+		const [lng, lat] = rdNaarWgs(x, y);
+		const [x2, y2] = wgsNaarRd(lng, lat);
+		assert.ok(Math.abs(x2 - x) < 0.2 && Math.abs(y2 - y) < 0.2, `${x}, ${y} werd ${x2}, ${y2}`);
 	}
 });

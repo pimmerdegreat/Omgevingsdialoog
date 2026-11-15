@@ -3,7 +3,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { STATUSSEN } from '../../../gedeeld/constanten.js';
-import { ApiFout, beheer } from '../api';
+import { ApiFout, beheer, DEMO } from '../api';
 import type { TrajectRegel } from '../types';
 import BeheerKop from './BeheerKop.vue';
 import { datumTijd, getal, maakSleutel } from './hulp';
@@ -93,6 +93,7 @@ onMounted(() => {
 
 		<main v-else-if="fase === 'inloggen'" class="beheer-inhoud smal">
 			<h1>Inloggen</h1>
+			<p v-if="DEMO" class="notitie">In de demo is het wachtwoord <strong>demo</strong>.</p>
 			<form @submit.prevent="inloggen">
 				<div class="veld">
 					<label for="wachtwoord">Wachtwoord</label>

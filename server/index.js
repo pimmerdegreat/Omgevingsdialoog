@@ -243,7 +243,7 @@ app.register(async (beheer) => {
 			const bijlage = (naam, type) => reply.header('Content-Type', type).header('Content-Disposition', `attachment; filename="${naam}"`).header('Cache-Control', 'no-store');
 			if (soort === 'geopackage') {
 				bijlage(`${slug}.gpkg`, 'application/geopackage+sqlite3');
-				return reply.send(await bouwGeopackage(request.traject));
+				return reply.send(await bouwGeopackage(await data.trajectGegevens(request.traject)));
 			}
 			if (soort === 'geojson') {
 				bijlage(`${slug}-bijdragen.geojson`, 'application/geo+json');

@@ -53,7 +53,7 @@ onBeforeUnmount(() => map?.remove());
 	<div class="start">
 		<header class="start-kop">
 			<a href="https://www.burosro.nl"><img :src="logo" alt="Buro SRO" width="877" height="400" /></a>
-			<RouterLink v-if="!DEMO" to="/beheer" class="knop knop-stil knop-klein">Beheer</RouterLink>
+			<RouterLink to="/beheer" class="knop knop-stil knop-klein">Beheer</RouterLink>
 		</header>
 		<main class="start-inhoud">
 			<div class="start-tekst">
@@ -64,8 +64,9 @@ onBeforeUnmount(() => map?.remove());
 				<div class="start-knoppen">
 					<RouterLink to="/p/voorbeeld-goylaan" class="knop">Probeer het voorbeeld</RouterLink>
 					<a v-if="DEMO" href="demo/resultaten.html" class="knop knop-stil">Bekijk het voorbeeldrapport</a>
+					<RouterLink v-if="DEMO" to="/beheer" class="knop knop-stil">Probeer het beheer</RouterLink>
 				</div>
-				<p v-if="DEMO" class="notitie">Dit is een demo zonder server. Wat je invult blijft in je eigen browser en wordt niet verstuurd.</p>
+				<p v-if="DEMO" class="notitie">Dit is een demo zonder server. Wat je invult of in beheer aanpast blijft in je eigen browser en wordt niet verstuurd. Het wachtwoord van beheer is <strong>demo</strong>.</p>
 				<p>Heb je een link naar een traject gekregen? Open dan die link om mee te doen.</p>
 			</div>
 			<figure class="start-kaart">

@@ -3,7 +3,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { LEEFTIJDEN, STATUSSEN } from '../../../gedeeld/constanten.js';
-import { ApiFout, beheer } from '../api';
+import { ApiFout, beheer, DEMO } from '../api';
 import type { InzendingRegel, Traject } from '../types';
 import BeheerKop from './BeheerKop.vue';
 import { datumTijd, getal } from './hulp';
@@ -97,13 +97,15 @@ onMounted(laad);
 
 				<!-- Resultaten -->
 				<section v-if="tab === 'resultaten'">
-					<div v-if="inzendingen.length" class="knoppenrij">
-						<a class="knop" :href="beheer.rapportUrl(id, true)">Download het rapport voor je klant</a>
+					<p v-if="DEMO && traject.voorbeeld" class="notitie">In de demo toont het rapport de voorbeelddata. Wat je zelf in de demo invult, staat er niet in; op de echte server wel.</p>
+					<p v-if="DEMO && !beheer.rapportUrl(id)" class="notitie">In de demo is er alleen een rapport van het voorbeeldtraject. Op de echte server maakt Dialoogkaart het rapport van elk traject.</p>
+					<div v-if="inzendingen.length && beheer.rapportUrl(id)" class="knoppenrij">
+						<a class="knop" :href="beheer.rapportUrl(id, true)" download>Download het rapport voor je klant</a>
 						<a class="knop knop-stil" :href="beheer.rapportUrl(id)" target="_blank" rel="noopener">Open het rapport in een nieuw tabblad</a>
 					</div>
 					<p class="hint ruimte">Het rapport is één HTML-bestand dat je als bijlage kunt mailen. Het bevat geen e-mailadressen. De kaartondergrond wordt bij het openen van internet geladen.</p>
-					<iframe v-if="inzendingen.length" :key="rapportVersie" class="rapportkader" :src="beheer.rapportUrl(id)" title="Voorbeeld van het resultatenrapport"></iframe>
-					<p v-else class="notitie">Er zijn nog geen inzendingen. Zet het traject bij Opzet op Open en deel de link met deelnemers.</p>
+					<iframe v-if="inzendingen.length && beheer.rapportUrl(id)" :key="rapportVersie" class="rapportkader" :src="beheer.rapportUrl(id)" title="Voorbeeld van het resultatenrapport"></iframe>
+					<p v-else-if="!inzendingen.length" class="notitie">Er zijn nog geen inzendingen. Zet het traject bij Opzet op Open en deel de link met deelnemers.</p>
 				</section>
 
 				<!-- Opzet -->
@@ -115,7 +117,7 @@ onMounted(laad);
 						{{ getal(metEmail) }} van de {{ getal(inzendingen.length) }} deelnemers lieten een e-mailadres achter. Deze lijst bevat persoonsgegevens en is alleen voor jou bedoeld.
 					</p>
 					<div v-if="inzendingen.length" class="knoppenrij">
-						<a class="knop knop-stil" :href="beheer.exportUrl(id, 'inzendingen.csv')">Download alle antwoorden (CSV, met e-mailadressen)</a>
+						<a v-if="beheer.exportUrl(id, 'inzendingen.csv')" class="knop knop-stil" :href="beheer.exportUrl(id, 'inzendingen.csv')" download>Download alle antwoorden (CSV, met e-mailadressen)</a>
 					</div>
 					<div v-if="inzendingen.length" class="tabelkader ruimte">
 						<table class="tabel">
@@ -154,7 +156,8 @@ onMounted(laad);
 					<section class="blok">
 						<h2>Openen in QGIS</h2>
 						<p>Het GeoPackage bevat alle bijdragen als punten, lijnen en vlakken in RD New, de planonderdelen met de telling van de oordelen, en de antwoorden per deelnemer. QGIS kleurt de bijdragen vanzelf per categorie.</p>
-						<a class="knop" :href="beheer.exportUrl(id, 'geopackage')">Download GeoPackage voor QGIS</a>
+						<a v-if="beheer.exportUrl(id, 'geopackage')" class="knop" :href="beheer.exportUrl(id, 'geopackage')" download>Download GeoPackage voor QGIS</a>
+						<p v-else class="notitie">In de demo zijn de bestanden voor QGIS er alleen van het voorbeeldtraject.</p>
 						<p class="hint ruimte">Sleep het bestand in QGIS en kies de lagen die je wilt zien. Download het opnieuw voor de nieuwste inzendingen.</p>
 					</section>
 
@@ -172,14 +175,15 @@ onMounted(laad);
 							<p>Het wachtwoord heeft je beheerder ingesteld. De lagen heten {{ qgis.lagen.join(', ') }}. Filter op de kolom traject met de waarde <strong>{{ traject.slug }}</strong> om alleen dit traject te zien.</p>
 							<p class="hint">De poort moet door de beheerder zijn opengezet voor jullie kantoornetwerk. Dezelfde lagen kan GeoServer als WMS of WFS aanbieden.</p>
 						</template>
+						<p v-else-if="DEMO" class="notitie">Rechtstreeks verbinden kan alleen met de echte server, omdat de demo geen database heeft.</p>
 						<p v-else class="notitie">De alleen-lezen gebruiker voor QGIS is nog niet aangemaakt in de database. In de installatiebeschrijving staat hoe de beheerder dat doet.</p>
 					</section>
 
 					<section class="blok">
 						<h2>Andere bestanden</h2>
 						<div class="knoppenrij">
-							<a class="knop knop-stil" :href="beheer.exportUrl(id, 'geojson')">Bijdragen als GeoJSON</a>
-							<a class="knop knop-stil" :href="beheer.exportUrl(id, 'bijdragen.csv')">Bijdragen als CSV</a>
+							<a v-if="beheer.exportUrl(id, 'geojson')" class="knop knop-stil" :href="beheer.exportUrl(id, 'geojson')" download>Bijdragen als GeoJSON</a>
+							<a v-if="beheer.exportUrl(id, 'bijdragen.csv')" class="knop knop-stil" :href="beheer.exportUrl(id, 'bijdragen.csv')" download>Bijdragen als CSV</a>
 						</div>
 						<p class="hint ruimte">De GeoJSON staat in graden (WGS84). De CSV opent direct in Excel en bevat per bijdrage de categorie, de toelichting en de plek.</p>
 					</section>

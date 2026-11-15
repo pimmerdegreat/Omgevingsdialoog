@@ -1,8 +1,16 @@
-// Alle verzoeken aan de server. In de demo (zonder server, bijvoorbeeld op GitHub Pages) komt het
-// voorbeeldtraject uit een bestand en blijft een inzending in de browser staan.
+// Alle verzoeken aan de server. In de demo zonder server (GitHub Pages) gaan ze naar demo.ts,
+// dat de server in de browser nabootst. Dat bestand wordt alleen in de demo geladen.
 import type { Inzending, InzendingRegel, PubliekTraject, Traject, TrajectRegel } from './types';
 
 export const DEMO = import.meta.env.VITE_DEMO === '1';
+
+/** Vaste sleutel van het voorbeeldtraject in de demo (zie server/seed/demo.js). */
+export const DEMO_TRAJECT_ID = '00000000-0000-4000-a000-000000000001';
+
+const demo = () => import('./demo');
+
+/** Kaartlagen die in de demo in deze browser zijn geüpload. */
+const demoBestanden = new Map<string, string>();
 
 export class ApiFout extends Error {
 	status: number;
@@ -33,47 +41,64 @@ const json = (methode: string, lichaam?: unknown): RequestInit => ({ method: met
 // ---- Deelnemers ----
 
 export async function haalTraject(slug: string): Promise<PubliekTraject> {
-	if (DEMO) {
-		const antwoord = await fetch('demo/traject.json');
-		const traject = (await antwoord.json()) as PubliekTraject;
-		if (traject.slug !== slug) throw new ApiFout('Dit traject bestaat niet.', 404);
-		return traject;
-	}
+	if (DEMO) return (await demo()).haalTraject(slug);
 	return verzoek<PubliekTraject>(`trajecten/${encodeURIComponent(slug)}`);
 }
 
 export async function verstuurInzending(slug: string, inzending: Inzending): Promise<void> {
-	if (DEMO) {
-		localStorage.setItem(`dialoogkaart:demo-inzending:${slug}`, JSON.stringify(inzending));
-		return;
-	}
+	if (DEMO) return (await demo()).verstuurInzending(slug, inzending);
 	await verzoek(`trajecten/${encodeURIComponent(slug)}/inzendingen`, json('POST', inzending));
 }
 
 export function bestandUrl(id: string): string {
+	if (DEMO) return demoBestanden.get(id) || localStorage.getItem(`dialoogkaart:demo:bestand:${id}`) || '';
 	return `api/bestanden/${id}`;
 }
 
 // ---- Beheer ----
 
+const EXPORTNAMEN: Record<string, string> = {
+	geopackage: 'voorbeeld-goylaan.gpkg',
+	geojson: 'voorbeeld-goylaan-bijdragen.geojson',
+	'bijdragen.csv': 'voorbeeld-goylaan-bijdragen.csv',
+	'inzendingen.csv': 'voorbeeld-goylaan-inzendingen.csv',
+};
+
 export const beheer = {
-	ik: () => verzoek<{ ingelogd: boolean; organisatie: { naam: string } }>('beheer/ik'),
-	inloggen: (wachtwoord: string) => verzoek('beheer/inloggen', json('POST', { wachtwoord })),
-	uitloggen: () => verzoek('beheer/uitloggen', json('POST', {})),
-	trajecten: () => verzoek<TrajectRegel[]>('beheer/trajecten'),
-	maak: (invoer: { titel: string; slug: string; kopie_van?: string }) => verzoek<Traject>('beheer/trajecten', json('POST', invoer)),
-	traject: (id: string) => verzoek<Traject>(`beheer/trajecten/${id}`),
-	bewaar: (t: Pick<Traject, 'id' | 'titel' | 'slug' | 'status' | 'definitie'>) =>
-		verzoek<Traject>(`beheer/trajecten/${t.id}`, json('PUT', { titel: t.titel, slug: t.slug, status: t.status, definitie: t.definitie })),
-	verwijder: (id: string) => verzoek(`beheer/trajecten/${id}`, json('DELETE')),
-	inzendingen: (id: string) => verzoek<InzendingRegel[]>(`beheer/trajecten/${id}/inzendingen`),
-	verwijderInzending: (id: string, inzendingId: string) => verzoek(`beheer/trajecten/${id}/inzendingen/${inzendingId}`, json('DELETE')),
-	uploadBestand: (id: string, bestand: Blob, naam: string) => {
+	ik: async () => (DEMO ? (await demo()).ik() : verzoek<{ ingelogd: boolean; organisatie: { naam: string } }>('beheer/ik')),
+	inloggen: async (wachtwoord: string) => (DEMO ? (await demo()).inloggen(wachtwoord) : verzoek('beheer/inloggen', json('POST', { wachtwoord }))),
+	uitloggen: async () => (DEMO ? (await demo()).uitloggen() : verzoek('beheer/uitloggen', json('POST', {}))),
+	trajecten: async () => (DEMO ? (await demo()).trajecten() : verzoek<TrajectRegel[]>('beheer/trajecten')),
+	maak: async (invoer: { titel: string; slug: string; kopie_van?: string }) => (DEMO ? (await demo()).maak(invoer) : verzoek<Traject>('beheer/trajecten', json('POST', invoer))),
+	traject: async (id: string) => (DEMO ? (await demo()).traject(id) : verzoek<Traject>(`beheer/trajecten/${id}`)),
+	bewaar: async (t: Pick<Traject, 'id' | 'titel' | 'slug' | 'status' | 'definitie'>) =>
+		DEMO
+			? (await demo()).bewaarTraject(t)
+			: verzoek<Traject>(`beheer/trajecten/${t.id}`, json('PUT', { titel: t.titel, slug: t.slug, status: t.status, definitie: t.definitie })),
+	verwijder: async (id: string) => (DEMO ? (await demo()).verwijder(id) : verzoek(`beheer/trajecten/${id}`, json('DELETE'))),
+	inzendingen: async (id: string) => (DEMO ? (await demo()).inzendingen(id) : verzoek<InzendingRegel[]>(`beheer/trajecten/${id}/inzendingen`)),
+	verwijderInzending: async (id: string, inzendingId: string) =>
+		DEMO ? (await demo()).verwijderInzending(id, inzendingId) : verzoek(`beheer/trajecten/${id}/inzendingen/${inzendingId}`, json('DELETE')),
+	uploadBestand: async (id: string, bestand: Blob, naam: string) => {
+		if (DEMO) return (await demo()).uploadBestand(id, bestand, naam, demoBestanden);
 		const formulier = new FormData();
 		formulier.append('bestand', bestand, naam);
 		return verzoek<{ id: string; naam: string; mime: string }>(`beheer/trajecten/${id}/bestanden`, { method: 'POST', body: formulier });
 	},
-	qgis: () => verzoek<{ ingesteld: boolean; database: string; poort: number; gebruiker: string; schema: string; lagen: string[] }>('beheer/qgis'),
-	rapportUrl: (id: string, download = false) => `api/beheer/trajecten/${id}/rapport${download ? '?download=1' : ''}`,
-	exportUrl: (id: string, soort: string) => `api/beheer/trajecten/${id}/export/${soort}`,
+	qgis: async () =>
+		DEMO ? (await demo()).qgis() : verzoek<{ ingesteld: boolean; database: string; poort: number; gebruiker: string; schema: string; lagen: string[] }>('beheer/qgis'),
+	/** Zet de demo terug naar de beginstand. Doet niets buiten de demo. */
+	demoOpnieuw: async () => {
+		if (DEMO) (await demo()).begin();
+	},
+	/** Adres van het rapport. In de demo is er alleen een rapport van het voorbeeldtraject; anders een lege tekst. */
+	rapportUrl: (id: string, download = false) => {
+		if (DEMO) return id === DEMO_TRAJECT_ID ? 'demo/resultaten.html' : '';
+		return `api/beheer/trajecten/${id}/rapport${download ? '?download=1' : ''}`;
+	},
+	/** Adres van een export. In de demo zijn er alleen exports van het voorbeeldtraject; anders een lege tekst. */
+	exportUrl: (id: string, soort: string) => {
+		if (DEMO) return id === DEMO_TRAJECT_ID && EXPORTNAMEN[soort] ? `demo/export/${EXPORTNAMEN[soort]}` : '';
+		return `api/beheer/trajecten/${id}/export/${soort}`;
+	},
 };

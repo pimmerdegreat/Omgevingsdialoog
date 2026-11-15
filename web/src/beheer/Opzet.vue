@@ -6,7 +6,7 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { BASISKAARTEN } from '../../../gedeeld/basiskaarten.js';
 import { boogSvg } from '../../../gedeeld/boog.js';
 import { CATEGORIEKLEUREN, STATUSSEN, VORMEN } from '../../../gedeeld/constanten.js';
-import { beheer } from '../api';
+import { beheer, DEMO } from '../api';
 import { leesGeojson, midden, naamUit } from '../kaart/geo';
 import KaartVlak from '../kaart/KaartVlak.vue';
 import { rdNaarWgs } from '../kaart/rd';
@@ -25,7 +25,8 @@ const melding = ref('');
 const fout = ref('');
 
 const def = computed(() => werk.definitie);
-const deelnemerLink = computed(() => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}p/${werk.slug}`);
+// Op de server is er een korte link (/p/naam); in de demo zonder server alleen het adres met een hekje.
+const deelnemerLink = computed(() => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}${DEMO ? '#/' : ''}p/${werk.slug}`);
 const gekopieerd = ref(false);
 
 async function kopieerLink() {
