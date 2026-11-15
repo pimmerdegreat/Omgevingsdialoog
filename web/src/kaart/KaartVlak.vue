@@ -66,7 +66,7 @@ onMounted(() => {
 	if (!el.value) return;
 	map = L.map(el.value, { zoomControl: false, zoomSnap: 0.5 }).setView([props.opzet.centrum[1], props.opzet.centrum[0]], props.opzet.zoom);
 	map.attributionControl.setPrefix(false);
-	L.control.zoom({ position: 'topleft', zoomInTitle: 'Inzoomen', zoomOutTitle: 'Uitzoomen' }).addTo(map);
+	L.control.zoom({ position: 'topright', zoomInTitle: 'Inzoomen', zoomOutTitle: 'Uitzoomen' }).addTo(map);
 	zetOndergrond(gekozen.value);
 	laadLagen();
 	// De kaart verandert van formaat als het paneel ernaast meeschuift of het scherm draait.

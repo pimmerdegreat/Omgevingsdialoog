@@ -98,7 +98,9 @@
 		if (!kaartEl || typeof L === 'undefined') return;
 		document.body.classList.add('met-kaart');
 		var k = gegevens.kaart;
-		kaart = L.map(kaartEl, { scrollWheelZoom: false, zoomSnap: 0.5 }).setView([k.centrum[1], k.centrum[0]], k.zoom);
+		kaart = L.map(kaartEl, { scrollWheelZoom: false, zoomSnap: 0.5, zoomControl: false }).setView([k.centrum[1], k.centrum[0]], k.zoom);
+		// Links ligt de legenda en rechtsboven de teller: de zoomknoppen staan daarom rechtsonder.
+		L.control.zoom({ position: 'bottomright', zoomInTitle: 'Inzoomen', zoomOutTitle: 'Uitzoomen' }).addTo(kaart);
 		kaart.attributionControl.setPrefix(false);
 		// Scrollen over de pagina mag de kaart niet per ongeluk laten zoomen: pas na een klik op de kaart.
 		kaart.on('click', function () {
@@ -171,7 +173,12 @@
 		gegevens.onderdelen.forEach(function (o) {
 			grenzen.push(midden(o.geometrie));
 		});
-		if (grenzen.length > 1) kaart.fitBounds(L.latLngBounds(grenzen).pad(0.08), { maxZoom: 17 });
+		if (grenzen.length > 1) {
+			// Op een breed scherm ligt de legenda links over de kaart; de bijdragen komen ernaast in beeld.
+			var paneel = document.querySelector('.kaartpaneel');
+			var links = paneel && getComputedStyle(paneel).position === 'absolute' ? paneel.offsetWidth + 32 : 24;
+			kaart.fitBounds(L.latLngBounds(grenzen), { paddingTopLeft: [links, 72], paddingBottomRight: [56, 24], maxZoom: 17 });
+		}
 		werkKaartBij();
 	}
 

@@ -83,14 +83,17 @@ De database richt je eenmalig in met `server/installatie.sql`. De tabellen en de
 
 ## Ontwerp
 
-De vormgeving volgt de uitgangspunten van Taste Skill: bouwen vanuit wat alleen bij dit bureau hoort, in plaats van een algemeen sjabloon.
+De vormgeving is licht en rustig, naar het voorbeeld van Apple en van de kaartweergave van Maptionnaire. De accentkleuren zijn die van Buro SRO.
 
-- De kaartmarkering is de boog uit het logo van Buro SRO.
-- De kleuren zijn het donkerblauw, oker en groen van het bureau; kleur is gereserveerd voor gegevens.
-- Eén lettertype (Archivo), vlakke vlakken, geen verlopen, schaduwen, glas, emoji of icoonkaarten.
+- De kaart vult het hele scherm. Het paneel om mee te doen zweeft er los boven; op een telefoon schuift het als blad van onderen in beeld en tijdens het tekenen weg.
+- Witte vlakken op lichtgrijs, afgeronde hoeken en zachte schaduwen.
+- Keuzes, schalen en tabbladen werken als de segmentknoppen en keuzelijsten van iOS.
+- Het systeemlettertype van de lezer: San Francisco op Apple-apparaten, Segoe UI op Windows.
+- De kaartmarkering is de boog uit het logo van Buro SRO. Donkerblauw, oker en groen zijn gereserveerd voor knoppen en gegevens.
+- In het rapport zweeft de legenda met een balkje per categorie over de kaart, met de teller van alle bijdragen ernaast.
 - Alle cijfers in het rapport zijn uit de inzendingen geteld.
 - Elke pagina is gecontroleerd op 1440, 768 en 390 pixels breed.
 
 ## Gebruikte onderdelen
 
-Leaflet (BSD-2-Clause), Leaflet.heat (BSD-2-Clause), Vue (MIT), Fastify (MIT), het lettertype Archivo (SIL Open Font License). Kaartgegevens van het Kadaster via PDOK en van OpenStreetMap-bijdragers. Het logo is van Buro SRO.
+Leaflet (BSD-2-Clause), Leaflet.heat (BSD-2-Clause), Vue (MIT), Fastify (MIT). Kaartgegevens van het Kadaster via PDOK en van OpenStreetMap-bijdragers. Het logo is van Buro SRO.

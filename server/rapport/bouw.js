@@ -1,4 +1,5 @@
-// Bouwt het resultatenrapport als één los HTML-bestand: stijl, lettertype, logo, kaartbibliotheek en gegevens zitten erin.
+// Bouwt het resultatenrapport als één los HTML-bestand: stijl, logo, kaartbibliotheek en gegevens zitten erin.
+// Het rapport gebruikt het systeemlettertype van de lezer (San Francisco op Apple, Segoe UI op Windows).
 // Alleen de kaartondergrond wordt bij het openen van internet gehaald.
 import { readFile } from 'node:fs/promises';
 import { boogSvg } from '../../gedeeld/boog.js';
@@ -12,19 +13,18 @@ async function vasteOnderdelen() {
 	if (onderdelenCache) return onderdelenCache;
 	const lees = (pad, codering = 'utf8') => readFile(pad, codering);
 	const hier = (naam) => new URL(naam, import.meta.url);
-	const [huisstijl, rapportCss, rapportJs, leafletCss, leafletJs, heatJs, letter, logo] = await Promise.all([
+	const [huisstijl, rapportCss, rapportJs, leafletCss, leafletJs, heatJs, logo] = await Promise.all([
 		lees(hier('../../gedeeld/huisstijl.css')),
 		lees(hier('./rapport.css')),
 		lees(hier('./rapport.js')),
 		lees(pakket('leaflet/dist/leaflet.css')),
 		lees(pakket('leaflet/dist/leaflet.js')),
 		lees(pakket('leaflet.heat/dist/leaflet-heat-global.js')),
-		lees(pakket('@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2'), 'base64'),
 		lees(hier('../../gedeeld/buro-sro.png'), 'base64'),
 	]);
 	// De standaardmarkeringen van Leaflet verwijzen naar losse afbeeldingen; die gebruiken we niet.
 	const leafletZonderAfbeeldingen = leafletCss.replace(/url\([^)]*\)/g, 'none');
-	onderdelenCache = { huisstijl, rapportCss, rapportJs, leafletCss: leafletZonderAfbeeldingen, leafletJs, heatJs, letter, logo };
+	onderdelenCache = { huisstijl, rapportCss, rapportJs, leafletCss: leafletZonderAfbeeldingen, leafletJs, heatJs, logo };
 	return onderdelenCache;
 }
 
@@ -81,10 +81,12 @@ function kopCijfers(g) {
 
 function kaartDeel(g) {
 	if (!g.totalen.bijdragen && !g.onderdelen.length) return '';
+	const hoogste = Math.max(1, ...g.categorieen.map((c) => c.aantal));
 	const legenda = g.categorieen
 		.map(
 			(c, i) =>
-				`<li><button type="button" class="legenda-knop" data-categorie="${i}" aria-pressed="true">${boogSvg(c.kleur, 'boog-klein')}<span>${e(c.label)}</span><span class="legenda-getal">${getal(c.aantal)}</span></button></li>`,
+				`<li><button type="button" class="legenda-knop" data-categorie="${i}" aria-pressed="true">${boogSvg(c.kleur, 'boog-klein')}<span>${e(c.label)}</span><span class="legenda-getal">${getal(c.aantal)}</span>` +
+				`<span class="legenda-balk" aria-hidden="true"><span style="--deel:${((c.aantal / hoogste) * 100).toFixed(1)}%;--kleur:${c.kleur}"></span></span></button></li>`,
 		)
 		.join('');
 	const planKnop = g.onderdelen.length
@@ -97,6 +99,7 @@ function kaartDeel(g) {
 	<div class="kaartkader">
 		<div class="kaartvlak">
 			<div id="kaart" role="application" aria-label="Kaart met bijdragen van deelnemers"></div>
+			<div class="kaartteller"><span>Bijdragen op de kaart</span><strong>${getal(g.totalen.bijdragen)}</strong></div>
 			<p class="kaart-zonder-script">De kaart heeft JavaScript en een internetverbinding nodig. De cijfers hieronder zijn ook zonder kaart te lezen.</p>
 		</div>
 		<div class="kaartpaneel">
@@ -274,7 +277,6 @@ export async function bouwRapport(g) {
 <meta name="robots" content="noindex">
 <title>Resultaten: ${e(g.titel)}</title>
 <style>
-@font-face{font-family:'Archivo Variable';font-style:normal;font-display:swap;font-weight:100 900;font-stretch:62% 125%;src:url(data:font/woff2;base64,${o.letter}) format('woff2-variations')}
 ${o.leafletCss}
 ${o.huisstijl}
 ${o.rapportCss}
@@ -302,6 +304,7 @@ ${deelnemersDeel(g)}
 ${toelichtingenDeel(g)}
 </main>
 <footer class="voet">
+<div class="voet-binnen">
 	<div>
 		<h2>Over dit rapport</h2>
 		<p>Dit rapport is opgemaakt door ${e(g.organisatie.naam)} op ${dag(g.gemaakt)} met alle inzendingen tot dat moment. De cijfers zijn rechtstreeks uit de inzendingen geteld. Deelnemers kozen zelf of zij meededen; de uitkomsten zijn daarom een beeld van wat er leeft en geen steekproef.</p>
@@ -312,6 +315,7 @@ ${toelichtingenDeel(g)}
 		<p>${e(g.organisatie.naam)}<br><a href="mailto:${e(g.organisatie.email)}">${e(g.organisatie.email)}</a><br><a href="${e(g.organisatie.website)}">${e(g.organisatie.website.replace(/^https?:\/\//, ''))}</a></p>
 		<p class="bijschrift" id="kaartbron">De kaartondergrond wordt van internet geladen.</p>
 	</div>
+</div>
 </footer>
 <script type="application/json" id="gegevens">${gegevensJson}</script>
 <script>${o.leafletJs}</script>

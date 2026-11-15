@@ -33,6 +33,7 @@ const stapFout = ref('');
 const verstuurFout = ref('');
 const bezigMetVersturen = ref(false);
 const paneel = ref<HTMLElement | null>(null);
+const zijpaneel = ref<HTMLElement | null>(null);
 
 const def = computed(() => traject.value!.definitie);
 const stappen = computed<Stap[]>(() => traject.value?.definitie.stappen ?? []);
@@ -142,12 +143,34 @@ function tekenPlanonderdelen() {
 	}
 }
 
+const breedScherm = () => window.matchMedia('(min-width: 900px)').matches;
+
+/** Hoeveel van de kaart het zwevende paneel afdekt: links op een breed scherm, onderaan op een telefoon. */
+function afgedekt(): { links: number; onder: number } {
+	const el = zijpaneel.value;
+	if (!el) return { links: 0, onder: 0 };
+	if (breedScherm()) return { links: el.offsetLeft + el.offsetWidth, onder: 0 };
+	return { links: 0, onder: el.offsetHeight };
+}
+
+/** Brengt een gebied in beeld in het deel van de kaart dat niet achter het paneel ligt. */
+function toonOpKaart(grenzen: L.LatLngBounds, maxZoom = 18) {
+	if (!map) return;
+	const { links, onder } = afgedekt();
+	map.fitBounds(grenzen, { paddingTopLeft: [links + 32, 80], paddingBottomRight: [72, onder + 32], maxZoom });
+}
+
 function kaartKlaar(m: L.Map) {
 	map = m;
 	planLaag = L.layerGroup().addTo(m);
 	eigenLaag = L.layerGroup().addTo(m);
 	tekenEigenBijdragen();
 	tekenPlanonderdelen();
+	// Het startbeeld midden in het zichtbare deel van de kaart zetten, naast of boven het paneel.
+	nextTick(() => {
+		const { links, onder } = afgedekt();
+		m.panBy([-links / 2, onder / 2], { animate: false });
+	});
 }
 
 watch([bijdragen, bewerk], tekenEigenBijdragen, { deep: true });
@@ -161,7 +184,7 @@ watch(stapNr, () => {
 	for (const o of s.onderdelen) if (o.geometrie.type !== 'Point') grenzen.extend(L.geoJSON(o.geometrie as GeoJSON.GeoJsonObject).getBounds());
 	nextTick(() => {
 		map?.invalidateSize();
-		map?.fitBounds(grenzen.pad(0.15), { maxZoom: 18 });
+		toonOpKaart(grenzen.pad(0.1));
 	});
 });
 
@@ -197,8 +220,6 @@ function begin(categorie: Categorie) {
 			nextTick(() => document.querySelector<HTMLTextAreaElement>(`#bijdrage-${lokaal} textarea`)?.focus({ preventScroll: true }));
 		},
 	);
-	// Op een telefoon staat de kaart boven het paneel: breng haar in beeld.
-	document.querySelector('.kaartvlak')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 const tekenHulp = computed(() => {
@@ -237,8 +258,8 @@ function kiesOnderdeel(o: Onderdeel, zoom: boolean) {
 	gekozenOnderdeel.value = o.id;
 	toonInPaneel(`onderdeel-${o.id}`);
 	if (zoom && map) {
-		if (o.geometrie.type === 'Point') map.setView(midden(o.geometrie), Math.max(map.getZoom(), 17));
-		else map.fitBounds(L.geoJSON(o.geometrie as GeoJSON.GeoJsonObject).getBounds().pad(0.4), { maxZoom: 18 });
+		const grenzen = o.geometrie.type === 'Point' ? L.latLng(midden(o.geometrie)).toBounds(160) : L.geoJSON(o.geometrie as GeoJSON.GeoJsonObject).getBounds().pad(0.3);
+		toonOpKaart(grenzen, Math.max(map.getZoom(), 17));
 	}
 }
 
@@ -355,13 +376,7 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 		<p>{{ foutmelding }}</p>
 	</div>
 
-	<div v-else-if="traject" class="meedoen" :class="{ 'kaart-groot': kaartGroot }">
-		<header class="balk">
-			<a :href="traject.organisatie.website" class="balk-logo"><img :src="logo" :alt="traject.organisatie.naam" width="877" height="400" /></a>
-			<p class="balk-titel">{{ traject.titel }}</p>
-			<span v-if="traject.voorbeeld" class="voorbeeld-label">Voorbeeld</span>
-		</header>
-
+	<div v-else-if="traject" class="meedoen" :class="{ 'kaart-groot': kaartGroot, tekent: tekenCategorie }">
 		<KaartVlak :opzet="def.kaart" @klaar="kaartKlaar">
 			<div v-if="tekenCategorie" class="tekenbalk" role="status">
 				<p><span v-html="boogSvg(tekenCategorie.kleur, 'boog-klein')"></span>{{ tekenHulp }}</p>
@@ -372,6 +387,13 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 				</div>
 			</div>
 		</KaartVlak>
+
+		<section ref="zijpaneel" class="zijpaneel" aria-label="Meedoen">
+		<header class="balk">
+			<a :href="traject.organisatie.website" class="balk-logo"><img :src="logo" :alt="traject.organisatie.naam" width="877" height="400" /></a>
+			<p class="balk-titel">{{ traject.titel }}</p>
+			<span v-if="traject.voorbeeld" class="voorbeeld-label">Voorbeeld</span>
+		</header>
 
 		<main ref="paneel" class="paneel">
 			<!-- Gesloten traject -->
@@ -539,5 +561,6 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 				<button v-else type="button" class="knop" :disabled="bezigMetVersturen" @click="verstuur">{{ bezigMetVersturen ? 'Bezig met versturen' : 'Versturen' }}</button>
 			</div>
 		</footer>
+		</section>
 	</div>
 </template>
