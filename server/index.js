@@ -42,9 +42,10 @@ app.addHook('onSend', async (request, reply) => {
 	reply.header('X-Content-Type-Options', 'nosniff');
 	reply.header('Referrer-Policy', 'same-origin');
 	const script = reply.rapport ? "'unsafe-inline'" : "'self'";
+	const insluiten = ['\'self\'', ...config.insluitenOp].join(' ');
 	reply.header(
 		'Content-Security-Policy',
-		`default-src 'self'; script-src ${script}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'`,
+		`default-src 'self'; script-src ${script}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors ${insluiten}; base-uri 'self'; form-action 'self'`,
 	);
 });
 

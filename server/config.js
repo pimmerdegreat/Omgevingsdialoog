@@ -24,6 +24,8 @@ export const config = {
 	sessieGeheim: env.SESSIE_GEHEIM || randomBytes(32).toString('hex'),
 	// Extra adressen (bijvoorbeeld een GitHub Pages-site) die het deelnemersdeel mogen aanroepen.
 	toegestaneHerkomst: (env.TOEGESTANE_HERKOMST || '').split(',').map((s) => s.trim()).filter(Boolean),
+	// Websites die Dialoogkaart in een kader (iframe) mogen tonen, bijvoorbeeld de projectsite van een gemeente. * = elke site.
+	insluitenOp: (env.INSLUITEN_OP || '').split(',').map((s) => s.trim()).filter(Boolean),
 	// Bij een lege database het voorbeeldtraject met voorbeelddata aanmaken.
 	voorbeeld: (env.VOORBEELD ?? '1') !== '0',
 	// Aanzetten zodra de site alleen via https bereikbaar is: de inlogcookie gaat dan nooit over een onbeveiligde verbinding.
