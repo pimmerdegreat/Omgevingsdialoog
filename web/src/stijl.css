@@ -1385,14 +1385,14 @@ fieldset {
 	gap: 0.5rem;
 }
 
-.rijen li {
+.rijen > li {
 	padding: 0.2rem 1rem 0.9rem;
 	border-radius: var(--hoek);
 	background: var(--wit);
 	box-shadow: var(--schaduw-1);
 }
 
-.blok > .rijen li {
+.blok > .rijen > li {
 	background: var(--vulling);
 	box-shadow: none;
 }
@@ -1548,4 +1548,453 @@ fieldset {
 .demobalk .tekstknop {
 	color: #6b4d00;
 	font-weight: 600;
+}
+
+/* ---------- Beelden en video in een stap ---------- */
+
+.mediablok {
+	display: grid;
+	gap: 0.75rem;
+	margin: 0.25rem 0 1.1rem;
+}
+
+.mediablok figure {
+	margin: 0;
+}
+
+.mediablok figcaption {
+	margin-top: 0.4rem;
+	font-size: 0.88rem;
+	line-height: 1.35;
+	color: var(--inkt-zacht);
+}
+
+.beeldstrook.meer {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: 86%;
+	gap: 10px;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	scrollbar-width: none;
+	margin-inline: -1.25rem;
+	padding-inline: 1.25rem;
+	scroll-padding-inline: 1.25rem;
+}
+
+.beeldstrook.meer::-webkit-scrollbar {
+	display: none;
+}
+
+.beeldstrook.meer figure {
+	scroll-snap-align: start;
+}
+
+.beeldknop {
+	position: relative;
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	border-radius: 14px;
+	background: var(--vulling);
+	overflow: hidden;
+	cursor: zoom-in;
+	box-shadow: 0 0 0 1px var(--scheiding);
+}
+
+.beeldknop img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 3 / 2;
+	object-fit: cover;
+	transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.beeldknop:hover img {
+	transform: scale(1.03);
+}
+
+.teller {
+	position: absolute;
+	right: 8px;
+	bottom: 8px;
+	padding: 0.15rem 0.55rem;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	font-size: 0.78rem;
+	font-weight: 600;
+}
+
+.speel {
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: var(--schaduw-2);
+	transition: transform var(--overgang);
+}
+
+.speel::after {
+	content: '';
+	margin-left: 4px;
+	border-left: 16px solid var(--blauw);
+	border-top: 10px solid transparent;
+	border-bottom: 10px solid transparent;
+}
+
+.videoknop {
+	display: grid;
+	place-content: center;
+	justify-items: center;
+	gap: 0.35rem;
+	aspect-ratio: 3 / 2;
+	padding: 1rem;
+	background: var(--blauw);
+	color: #fff;
+	font-weight: 600;
+	text-align: center;
+	cursor: pointer;
+}
+
+.videoknop small {
+	max-width: 30ch;
+	font-weight: 400;
+	font-size: 0.75rem;
+	opacity: 0.8;
+}
+
+.videoknop:hover .speel {
+	transform: scale(1.08);
+}
+
+.vergroot-teken {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	display: grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.92);
+	color: var(--inkt);
+	box-shadow: var(--schaduw-1);
+	opacity: 0;
+	transition: opacity var(--overgang);
+}
+
+.vergroot-teken svg {
+	width: 14px;
+	height: 14px;
+}
+
+.beeldknop:hover .vergroot-teken,
+.beeldknop:focus-visible .vergroot-teken {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.vergroot-teken {
+		opacity: 1;
+	}
+}
+
+/* Bij een vraag: kleiner, zodat de antwoorden in beeld blijven. */
+.mediablok.klein {
+	margin: 0.1rem 0 0.75rem;
+}
+
+.mediablok.klein .beeldstrook:not(.meer) figure {
+	max-width: 70%;
+}
+
+.mediablok.klein .videoknop small {
+	display: none;
+}
+
+/* Groot beeld over het hele scherm */
+.beeldvenster {
+	position: fixed;
+	inset: 0;
+	z-index: 3000;
+	display: grid;
+	place-items: center;
+	padding: 3.5rem 1rem 1.5rem;
+	background: rgba(20, 22, 26, 0.88);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	animation: verschijn 0.2s ease;
+}
+
+.beeldvenster figure {
+	display: grid;
+	justify-items: center;
+	gap: 0.75rem;
+	margin: 0;
+	max-width: min(1400px, 100%);
+}
+
+.beeldvenster figure.isvideo {
+	width: min(1100px, 100%);
+}
+
+.venster-video {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	border-radius: 12px;
+	background: #000;
+	overflow: hidden;
+	box-shadow: var(--schaduw-3);
+}
+
+.venster-video iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+.beeldvenster img {
+	max-width: 100%;
+	max-height: calc(100dvh - 9rem);
+	border-radius: 12px;
+	box-shadow: var(--schaduw-3);
+	background: #fff;
+}
+
+.beeldvenster figcaption {
+	display: flex;
+	gap: 0.75rem;
+	align-items: center;
+	color: #fff;
+	font-size: 0.95rem;
+	text-align: center;
+}
+
+.beeldvenster .teller {
+	position: static;
+	background: rgba(255, 255, 255, 0.18);
+}
+
+.venster-knop {
+	position: absolute;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	font-size: 1.7rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background-color var(--overgang);
+}
+
+.venster-knop:hover {
+	background: rgba(255, 255, 255, 0.3);
+}
+
+.venster-knop.sluit {
+	top: 12px;
+	right: 12px;
+}
+
+.venster-knop.vorige {
+	left: 12px;
+	top: 50%;
+}
+
+.venster-knop.volgende {
+	right: 12px;
+	top: 50%;
+}
+
+/* Antwoorden met afbeelding, bijvoorbeeld ontwerpmodellen */
+.beeldkeuzes {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 10px;
+}
+
+.beeldkeuze-kaart {
+	position: relative;
+}
+
+.keuze.beeldkeuze {
+	height: 100%;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: start;
+	gap: 0.6rem;
+	margin: 0;
+	padding: 0 0 0.75rem;
+	overflow: hidden;
+}
+
+.beeldkeuze > span:last-child {
+	padding-right: 0.75rem;
+	font-weight: 500;
+	line-height: 1.3;
+}
+
+.beeldkeuze input {
+	margin: 0.05rem 0 0 0.75rem;
+}
+
+.beeldkeuze-beeld {
+	position: relative;
+	grid-column: 1 / -1;
+}
+
+.beeldkeuze-beeld img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 3 / 2;
+	object-fit: cover;
+}
+
+.vergroot {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.92);
+	color: var(--inkt);
+	box-shadow: var(--schaduw-1);
+	cursor: zoom-in;
+}
+
+.vergroot svg {
+	width: 15px;
+	height: 15px;
+}
+
+/* Beheer: beelden en video bewerken */
+.media-bewerk {
+	margin-top: 1rem;
+}
+
+.media-rij {
+	display: flex;
+	align-items: end;
+	gap: 1rem;
+	padding-top: 0.8rem;
+}
+
+.media-rij .veld {
+	flex: 1;
+	margin-top: 0;
+}
+
+.media-duim {
+	display: block;
+	width: 84px;
+	height: 56px;
+	border-radius: 8px;
+	object-fit: cover;
+	background: var(--vulling-sterk);
+	flex: none;
+}
+
+.video-duim {
+	display: grid;
+	place-items: center;
+	background: var(--blauw);
+}
+
+.video-duim .speel {
+	width: 28px;
+	height: 28px;
+}
+
+.video-duim .speel::after {
+	margin-left: 2px;
+	border-left-width: 9px;
+	border-top-width: 6px;
+	border-bottom-width: 6px;
+}
+
+.media-duim.leeg {
+	box-shadow: inset 0 0 0 1.5px var(--rand);
+	background: repeating-linear-gradient(45deg, transparent 0 6px, rgba(60, 60, 67, 0.06) 6px 12px);
+}
+
+.media-toevoegen {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.video-toevoegen {
+	display: flex;
+	flex: 1 1 22rem;
+	gap: 0.5rem;
+}
+
+.video-toevoegen input {
+	flex: 1;
+}
+
+.bestandknop.bezig {
+	opacity: 0.6;
+}
+
+.optiebeelden {
+	margin-top: 0.9rem;
+}
+
+.optiebeelden ul {
+	list-style: none;
+	margin: 0.6rem 0 0;
+	padding: 0;
+	display: grid;
+	gap: 6px;
+}
+
+.optiebeelden li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem 1rem;
+}
+
+.optiebeelden .media-duim {
+	width: 60px;
+	height: 40px;
+}
+
+.optie-naam {
+	flex: 1 1 10rem;
+	font-weight: 500;
+}
+
+@media (max-width: 899px) {
+	.beeldstrook.meer {
+		margin-inline: -1.1rem;
+		padding-inline: 1.1rem;
+		scroll-padding-inline: 1.1rem;
+	}
+
+	.beeldkeuzes {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.optiebeelden-open {
+	display: block;
+	margin-top: 0.75rem;
 }

@@ -3,7 +3,7 @@
 // De beginstand (het voorbeeldtraject met 148 verzonnen deelnemers) komt uit demo/beheer.json.
 import { legeDefinitie } from '../../gedeeld/sjabloon.js';
 import { valideerInzending, valideerTraject } from '../../server/validatie.js';
-import { ApiFout, DEMO_TRAJECT_ID } from './api';
+import { ApiFout, DEMO_TRAJECT_ID, registreerDemoBestand } from './api';
 import type { Definitie, Inzending, InzendingRegel, Organisatie, PubliekTraject, Traject, TrajectRegel } from './types';
 
 const OPSLAG = 'dialoogkaart:demo:beheer:v1';
@@ -14,6 +14,8 @@ interface Beginstand {
 	organisatie: Organisatie;
 	traject: Traject;
 	inzendingen: InzendingRegel[];
+	/** Bestanden van het voorbeeldtraject: sleutel naar adres op de site. */
+	bestanden: Record<string, string>;
 }
 
 type EigenInzending = InzendingRegel & { traject_id: string };
@@ -35,6 +37,7 @@ async function laad(): Promise<{ begin: Beginstand; o: Opslag }> {
 		const antwoord = await fetch('demo/beheer.json');
 		if (!antwoord.ok) throw new ApiFout('De demo kon niet worden geladen.', 500);
 		beginstand = (await antwoord.json()) as Beginstand;
+		for (const [id, adres] of Object.entries(beginstand.bestanden || {})) registreerDemoBestand(id, adres);
 	}
 	if (!opslag) {
 		try {
@@ -165,7 +168,8 @@ export async function maak(invoer: { titel: string; slug: string; kopie_van?: st
 	let definitie = legeDefinitie(begin.organisatie) as unknown as Definitie;
 	if (invoer.kopie_van) {
 		const bron = vind(o, invoer.kopie_van);
-		definitie = { ...structuredClone(bron.definitie), kaart: { ...structuredClone(bron.definitie.kaart), lagen: [] } };
+		// In de demo staan bestanden los van een traject; de kopie mag dezelfde bestanden gebruiken.
+		definitie = structuredClone(bron.definitie);
 	}
 	const schoon = controleer(() => valideerTraject({ titel: invoer.titel, slug: invoer.slug, status: 'concept', definitie }));
 	if (o.trajecten.some((t) => t.slug === schoon.slug)) throw new ApiFout('Dit webadres is al in gebruik bij een ander traject.', 409);
@@ -226,7 +230,7 @@ export async function uploadBestand(id: string, bestand: Blob, naam: string, geh
 	vind(o, id);
 	const mime = bestand.type || (/\.(geo)?json$/i.test(naam) ? 'application/geo+json' : '');
 	if (!/^image\/(png|jpeg|webp)$/.test(mime) && !/json/.test(mime)) throw new ApiFout('Dit bestand is geen PNG, JPG, WebP of GeoJSON.', 400);
-	if (bestand.size > 4 * 1024 * 1024) throw new ApiFout('In de demo kan een kaartlaag hoogstens 4 MB zijn. Op de echte server is dat 15 MB.', 413);
+	if (bestand.size > 4 * 1024 * 1024) throw new ApiFout('In de demo kan een bestand hoogstens 4 MB zijn. Op de echte server is dat 15 MB.', 413);
 	const dataAdres = await new Promise<string>((klaar, mislukt) => {
 		const lezer = new FileReader();
 		lezer.onload = () => klaar(String(lezer.result));

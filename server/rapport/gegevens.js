@@ -23,7 +23,7 @@ function weekStart(iso) {
  * @param {{traject: object, inzendingen: object[], bijdragen: object[], reacties: object[]}} bron
  * @param {{naam: string, website: string, email: string}} organisatie
  */
-export function rapportGegevens({ traject, inzendingen, bijdragen, reacties }, organisatie, nu = new Date()) {
+export function rapportGegevens({ traject, inzendingen, bijdragen, reacties }, organisatie, nu = new Date(), beelden = {}) {
 	const def = traject.definitie;
 
 	// Categorieën in de volgorde van het traject, met hun bijdragen.
@@ -69,7 +69,8 @@ export function rapportGegevens({ traject, inzendingen, bijdragen, reacties }, o
 			const vraag = { label: v.label, type: v.type, aantal: waarden.length };
 			if (v.type === 'keuze' || v.type === 'meerkeuze') {
 				const telling = tel(waarden.flat(), (w) => w);
-				vraag.opties = v.opties.map((label) => ({ label, aantal: telling.get(label) || 0 }));
+				// Een afbeelding per antwoord (bijvoorbeeld een ontwerpmodel) gaat als data-adres mee in het rapport.
+				vraag.opties = v.opties.map((label) => ({ label, aantal: telling.get(label) || 0, beeld: beelden[v.optieBeelden?.[label]] || null }));
 			} else if (v.type === 'schaal') {
 				const telling = tel(waarden, (w) => Number(w));
 				vraag.opties = [];

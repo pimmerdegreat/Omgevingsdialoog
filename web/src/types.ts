@@ -24,6 +24,9 @@ export interface Onderdeel {
 	geometrie: Geometrie;
 }
 
+/** Een afbeelding of YouTube-video bovenaan een stap. */
+export type Media = { type: 'afbeelding'; bestand_id: string; bijschrift: string } | { type: 'video'; youtube: string; bijschrift: string };
+
 export type Vraagtype = 'keuze' | 'meerkeuze' | 'schaal' | 'tekst' | 'getal';
 
 export interface Vraag {
@@ -36,12 +39,17 @@ export interface Vraag {
 	max: number;
 	minLabel: string;
 	maxLabel: string;
+	/** Afbeelding per antwoordoptie: optietekst naar bestandssleutel. */
+	optieBeelden?: Record<string, string>;
+	/** Beelden of een video die de vraag ondersteunen. */
+	media?: Media[];
 }
 
 interface StapBasis {
 	id: string;
 	titel: string;
 	tekst: string;
+	media?: Media[];
 }
 export interface TekenStap extends StapBasis {
 	type: 'tekenen';

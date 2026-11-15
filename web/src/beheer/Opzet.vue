@@ -6,18 +6,28 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { BASISKAARTEN } from '../../../gedeeld/basiskaarten.js';
 import { boogSvg } from '../../../gedeeld/boog.js';
 import { CATEGORIEKLEUREN, STATUSSEN, VORMEN } from '../../../gedeeld/constanten.js';
-import { beheer, DEMO } from '../api';
+import { beheer, bestandUrl, DEMO } from '../api';
+import { verkleinBeeld } from './beeld';
+import MediaBewerk from './MediaBewerk.vue';
 import { leesGeojson, midden, naamUit } from '../kaart/geo';
 import KaartVlak from '../kaart/KaartVlak.vue';
 import { rdNaarWgs } from '../kaart/rd';
 import { startTekenen, type Tekening } from '../kaart/tekenen';
-import type { Geometrie, Kaartlaag, Onderdeel, Stap, Traject, Vorm, Vraag } from '../types';
+import type { Geometrie, Kaartlaag, Media, Onderdeel, Stap, Traject, Vorm, Vraag } from '../types';
 import { maakSleutel, uniekeSleutel } from './hulp';
 
 const props = defineProps<{ traject: Traject }>();
 const emit = defineEmits<{ bewaard: [traject: Traject] }>();
 
 const werk = reactive<Pick<Traject, 'id' | 'titel' | 'slug' | 'status' | 'definitie'>>(JSON.parse(JSON.stringify(props.traject)));
+// Oudere opzetten hebben nog geen velden voor beelden.
+for (const stap of werk.definitie.stappen) {
+	stap.media ??= [];
+	if (stap.type === 'vragen') for (const vr of stap.vragen) {
+		vr.optieBeelden ??= {};
+		vr.media ??= [];
+	}
+}
 const bewaardeVersie = ref(JSON.stringify({ titel: werk.titel, slug: werk.slug, status: werk.status, definitie: werk.definitie }));
 const gewijzigd = computed(() => JSON.stringify({ titel: werk.titel, slug: werk.slug, status: werk.status, definitie: werk.definitie }) !== bewaardeVersie.value);
 const bezig = ref(false);
@@ -218,7 +228,7 @@ const STAPNAMEN: Record<Stap['type'], string> = { tekenen: 'Tekenen op de kaart'
 
 function voegStapToe(type: Stap['type']) {
 	const ids = def.value.stappen.map((s) => s.id);
-	const basis = { id: uniekeSleutel(type, ids), tekst: '' };
+	const basis = { id: uniekeSleutel(type, ids), tekst: '', media: [] as Media[] };
 	if (type === 'tekenen') def.value.stappen.push({ ...basis, type, titel: 'Zet jouw plekken op de kaart', categorieen: [nieuweCategorie([])] });
 	else if (type === 'reageren') def.value.stappen.push({ ...basis, type, titel: 'Wat vind je van deze voorstellen?', onderdelen: [] });
 	else def.value.stappen.push({ ...basis, type, titel: 'Een paar vragen', vragen: [nieuweVraag([])] });
@@ -243,12 +253,46 @@ function nieuweCategorie(bestaand: { id: string; kleur: string }[]) {
 
 function nieuweVraag(bestaand: Vraag[]): Vraag {
 	const alle = def.value.stappen.flatMap((s) => (s.type === 'vragen' ? s.vragen.map((v) => v.id) : [])).concat(bestaand.map((v) => v.id));
-	return { id: uniekeSleutel(`vraag-${alle.length + 1}`, alle), type: 'keuze', label: '', verplicht: false, opties: [], min: 1, max: 5, minLabel: '', maxLabel: '' };
+	return { id: uniekeSleutel(`vraag-${alle.length + 1}`, alle), type: 'keuze', label: '', verplicht: false, opties: [], min: 1, max: 5, minLabel: '', maxLabel: '', optieBeelden: {}, media: [] };
 }
 
 const optiesTekst = (v: Vraag) => v.opties.join('\n');
 function zetOpties(v: Vraag, e: Event) {
 	v.opties = (e.target as HTMLTextAreaElement).value.split('\n').map((o) => o.trim()).filter(Boolean);
+	// Afbeeldingen van antwoorden die niet meer bestaan, vervallen.
+	if (v.optieBeelden) v.optieBeelden = Object.fromEntries(Object.entries(v.optieBeelden).filter(([o]) => v.opties.includes(o)));
+}
+
+// ---- Beelden en video per stap, afbeelding per antwoord ----
+
+const mediaFout = reactive<Record<string, string>>({});
+const optieBeeldenOpen = reactive<Record<string, boolean>>({});
+const bezigMetBeeld = ref(false);
+
+async function uploadBeeld(bestand: File) {
+	const { blob, naam } = await verkleinBeeld(bestand);
+	return (await beheer.uploadBestand(werk.id, blob, naam)).id;
+}
+
+async function zetOptieBeeld(v: Vraag, optie: string, e: Event) {
+	const invoer = e.target as HTMLInputElement;
+	const bestand = invoer.files?.[0];
+	invoer.value = '';
+	mediaFout[v.id] = '';
+	if (!bestand) return;
+	bezigMetBeeld.value = true;
+	try {
+		v.optieBeelden = { ...(v.optieBeelden || {}), [optie]: await uploadBeeld(bestand) };
+	} catch (fout) {
+		mediaFout[v.id] = (fout as Error).message;
+	} finally {
+		bezigMetBeeld.value = false;
+	}
+}
+
+function verwijderOptieBeeld(v: Vraag, optie: string) {
+	const { [optie]: _weg, ...rest } = v.optieBeelden || {};
+	v.optieBeelden = rest;
 }
 
 // Planonderdelen: tekenen op de kaart of inlezen uit GeoJSON.
@@ -454,6 +498,14 @@ const tekenMinimum = computed(() => (tekenVorm.value === 'lijn' ? 2 : 3));
 					<textarea :id="`stap-tekst-${stap.id}`" v-model="stap.tekst" rows="2" maxlength="3000"></textarea>
 				</div>
 
+				<MediaBewerk
+					:doel="stap"
+					:traject-id="werk.id"
+					:max="8"
+					titel="Beelden en video bij deze stap"
+					uitleg="Staan in het linkerpaneel onder de titel van de stap, bijvoorbeeld een schetsontwerp of impressie. Deelnemers openen ze groot met een klik. De kaart blijft ongewijzigd."
+				/>
+
 				<!-- Tekenstap -->
 				<template v-if="stap.type === 'tekenen'">
 					<h3>Categorieën</h3>
@@ -558,6 +610,31 @@ const tekenMinimum = computed(() => (tekenVorm.value === 'lijn' ? 2 : 3));
 								<label :for="`opties-${v.id}`">Antwoordopties, één per regel</label>
 								<textarea :id="`opties-${v.id}`" :value="optiesTekst(v)" rows="4" @change="zetOpties(v, $event)"></textarea>
 							</div>
+							<button
+								v-if="(v.type === 'keuze' || v.type === 'meerkeuze') && v.opties.length && !optieBeeldenOpen[v.id] && !Object.keys(v.optieBeelden || {}).length"
+								type="button"
+								class="tekstknop optiebeelden-open"
+								@click="optieBeeldenOpen[v.id] = true"
+							>
+								+ Afbeelding per antwoord, bijvoorbeeld om tussen modellen te kiezen
+							</button>
+							<div v-else-if="(v.type === 'keuze' || v.type === 'meerkeuze') && v.opties.length" class="optiebeelden">
+								<p class="veldlabel">Afbeelding per antwoord (mag je overslaan)</p>
+								<p class="hint">Handig om te kiezen tussen ontwerpmodellen. De antwoorden verschijnen dan als kaarten met afbeelding.</p>
+								<ul>
+									<li v-for="optie in v.opties" :key="optie">
+										<img v-if="v.optieBeelden?.[optie]" :src="bestandUrl(v.optieBeelden[optie])" class="media-duim" alt="" />
+										<span v-else class="media-duim leeg" aria-hidden="true"></span>
+										<span class="optie-naam">{{ optie }}</span>
+										<label class="tekstknop bestandknop">
+											{{ v.optieBeelden?.[optie] ? 'Vervang' : 'Kies afbeelding' }}
+											<input type="file" accept="image/png,image/jpeg,image/webp" :aria-label="`Afbeelding voor ${optie}`" :disabled="bezigMetBeeld" @change="zetOptieBeeld(v, optie, $event)" />
+										</label>
+										<button v-if="v.optieBeelden?.[optie]" type="button" class="tekstknop gevaar" @click="verwijderOptieBeeld(v, optie)">Verwijder</button>
+									</li>
+								</ul>
+								<p v-if="mediaFout[v.id]" class="foutmelding" role="alert">{{ mediaFout[v.id] }}</p>
+							</div>
 							<div v-else-if="v.type === 'schaal'" class="rij-velden">
 								<div class="veld">
 									<label :for="`min-${v.id}`">Van</label>
@@ -576,6 +653,13 @@ const tekenMinimum = computed(() => (tekenVorm.value === 'lijn' ? 2 : 3));
 									<input :id="`maxl-${v.id}`" v-model="v.maxLabel" type="text" maxlength="60" placeholder="Uitstekend" />
 								</div>
 							</div>
+							<MediaBewerk
+								:doel="v"
+								:traject-id="werk.id"
+								:max="4"
+								titel="Beeld of video bij deze vraag"
+								uitleg="Staat in het linkerpaneel direct onder de vraag, om de vraag te ondersteunen of te verduidelijken. Deelnemers openen het groot met een klik."
+							/>
 							<div class="rij-acties">
 								<label class="inline"><input v-model="v.verplicht" type="checkbox" /> Verplicht</label>
 								<button type="button" class="tekstknop" :disabled="vnr === 0" @click="verplaats(stap.vragen, vnr, -1)">Omhoog</button>

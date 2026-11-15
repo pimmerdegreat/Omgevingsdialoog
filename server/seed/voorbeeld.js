@@ -5,6 +5,16 @@
 
 export const VOORBEELD_SLUG = 'voorbeeld-goylaan';
 
+// Schetsen voor het voorbeeld (server/seed/beelden), met vaste sleutels zodat de opzet ernaar kan verwijzen.
+export const VOORBEELD_BEELDEN = [
+	{ id: '00000000-0000-4000-a000-0000000000b1', bestand: 'overzicht.png' },
+	{ id: '00000000-0000-4000-a000-0000000000b2', bestand: 'model-a.png' },
+	{ id: '00000000-0000-4000-a000-0000000000b3', bestand: 'model-b.png' },
+	{ id: '00000000-0000-4000-a000-0000000000b4', bestand: 'model-c.png' },
+];
+const [OVERZICHT, MODEL_A, MODEL_B, MODEL_C] = VOORBEELD_BEELDEN.map((b) => b.id);
+const MODELLEN = ['Model A · Groen plein', 'Model B · Stenen plein met fonteinen', 'Model C · Plein met paviljoen'];
+
 export function voorbeeldTraject() {
 	return {
 		slug: VOORBEELD_SLUG,
@@ -43,6 +53,7 @@ export function voorbeeldTraject() {
 					type: 'reageren',
 					titel: 'Wat vind je van deze voorstellen?',
 					tekst: 'Klik op een voorstel op de kaart of in de lijst en geef je mening. De voorstellen zijn verzonnen voor dit voorbeeld.',
+					media: [{ type: 'afbeelding', bestand_id: OVERZICHT, bijschrift: 'Schetsontwerp van de vier voorstellen. Klik op de afbeelding om te vergroten.' }],
 					onderdelen: [
 						{
 							id: 'bomenrij',
@@ -96,7 +107,7 @@ export function voorbeeldTraject() {
 				{
 					id: 'vragen',
 					type: 'vragen',
-					titel: 'Nog vier vragen over de buurt',
+					titel: 'Nog vijf vragen over de buurt',
 					tekst: '',
 					vragen: [
 						{
@@ -131,6 +142,18 @@ export function voorbeeldTraject() {
 							max: 10,
 							minLabel: 'Slecht',
 							maxLabel: 'Uitstekend',
+						},
+						{
+							id: 'plein',
+							type: 'keuze',
+							label: "Welk model voor het plein bij 't Goyplein heeft je voorkeur?",
+							verplicht: false,
+							opties: MODELLEN,
+							optieBeelden: { [MODELLEN[0]]: MODEL_A, [MODELLEN[1]]: MODEL_B, [MODELLEN[2]]: MODEL_C },
+							min: 1,
+							max: 5,
+							minLabel: '',
+							maxLabel: '',
 						},
 						{
 							id: 'behouden',
@@ -403,6 +426,7 @@ export function voorbeeldGegevens(start = 2010) {
 		}
 		if (rnd() < 0.9) antwoorden.cijfer = Math.min(10, Math.max(3, Math.round(6.8 + normaal() * 1.3)));
 		if (rnd() < 0.4) antwoorden.behouden = kies(BEHOUDEN);
+		if (rnd() < 0.86) antwoorden.plein = gewogen([[MODELLEN[0], 6], [MODELLEN[1], 2], [MODELLEN[2], 4]])[0];
 
 		inzendingen.push({
 			id,

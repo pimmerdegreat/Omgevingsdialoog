@@ -2,13 +2,14 @@
 // - web/public/demo/beheer.json: het voorbeeldtraject en de lijst met inzendingen, als beginstand van beheer
 // - web/public/demo/resultaten.html: het resultatenrapport van de voorbeelddata
 // - web/public/demo/export/: het GeoPackage, de GeoJSON en de CSV-bestanden van het voorbeeldtraject
-import { mkdir, writeFile } from 'node:fs/promises';
+// - web/public/demo/beelden/: de schetsen van het voorbeeldtraject
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { bijdragenCsv, inzendingenCsv } from '../export/csv.js';
 import { bijdragenGeojson } from '../export/geojson.js';
 import { bouwGeopackage } from '../export/gpkg.js';
 import { bouwRapport } from '../rapport/bouw.js';
 import { rapportGegevens } from '../rapport/gegevens.js';
-import { voorbeeldGegevens, voorbeeldTraject } from './voorbeeld.js';
+import { VOORBEELD_BEELDEN, voorbeeldGegevens, voorbeeldTraject } from './voorbeeld.js';
 
 // Vaste sleutel van het voorbeeldtraject in de demo; de website kent dezelfde waarde (web/src/api.ts).
 export const DEMO_TRAJECT_ID = '00000000-0000-4000-a000-000000000001';
@@ -34,7 +35,19 @@ const traject = {
 
 const doel = new URL('../../web/public/demo/', import.meta.url);
 const exportMap = new URL('export/', doel);
+const beeldMap = new URL('beelden/', doel);
 await mkdir(exportMap, { recursive: true });
+await mkdir(beeldMap, { recursive: true });
+
+// De schetsen: als losse bestanden voor de website, als data-adres voor het rapport.
+const bestanden = {};
+const beelden = {};
+for (const beeld of VOORBEELD_BEELDEN) {
+	const bron = new URL(`./beelden/${beeld.bestand}`, import.meta.url);
+	await copyFile(bron, new URL(beeld.bestand, beeldMap));
+	bestanden[beeld.id] = `demo/beelden/${beeld.bestand}`;
+	beelden[beeld.id] = `data:image/png;base64,${(await readFile(bron)).toString('base64')}`;
+}
 
 // Beginstand van beheer: het traject en per deelnemer een regel, zoals beheer die van de server krijgt.
 const telling = (lijst) => lijst.reduce((m, x) => m.set(x.inzending_id, (m.get(x.inzending_id) || 0) + 1), new Map());
@@ -50,11 +63,11 @@ const inzendingen = gegevens.inzendingen.map((i) => ({
 	bijdragen: perBijdrage.get(i.id) || 0,
 	reacties: perReactie.get(i.id) || 0,
 }));
-await writeFile(new URL('beheer.json', doel), JSON.stringify({ organisatie, traject, inzendingen }));
+await writeFile(new URL('beheer.json', doel), JSON.stringify({ organisatie, traject, inzendingen, bestanden }));
 
 // Rapport en exports zonder e-mailadressen en met alleen de cijfers van de postcode, net als op de server.
 const zonderPersoonsgegevens = { traject, ...gegevens, inzendingen: gegevens.inzendingen.map((i) => ({ ...i, email: null, op_de_hoogte: false, postcode: i.postcode ? i.postcode.slice(0, 4) : null })) };
-const html = await bouwRapport(rapportGegevens(zonderPersoonsgegevens, organisatie));
+const html = await bouwRapport(rapportGegevens(zonderPersoonsgegevens, organisatie, new Date(), beelden));
 await writeFile(new URL('resultaten.html', doel), html);
 
 const slug = traject.slug;

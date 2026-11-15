@@ -1,6 +1,8 @@
 // Lezen en schrijven van trajecten, inzendingen en bestanden.
+import { readFile } from 'node:fs/promises';
+import { bestandIds } from '../gedeeld/media.js';
 import { query, transactie } from './db.js';
-import { voorbeeldGegevens, voorbeeldTraject } from './seed/voorbeeld.js';
+import { VOORBEELD_BEELDEN, voorbeeldGegevens, voorbeeldTraject } from './seed/voorbeeld.js';
 
 const TRAJECT_VELDEN = 'id, slug, titel, status, definitie, voorbeeld, aangemaakt, gewijzigd, gesloten_op, geanonimiseerd_op';
 
@@ -147,8 +149,27 @@ export async function bestandOpId(id) {
 
 /** Verwijdert bestanden die niet meer in de opzet van het traject voorkomen. */
 export async function ruimBestandenOp(trajectId, definitie) {
-	const inGebruik = definitie.kaart.lagen.map((l) => l.bestand_id);
-	await query('delete from bestand where traject_id = $1 and not (id = any($2::uuid[]))', [trajectId, inGebruik]);
+	await query('delete from bestand where traject_id = $1 and not (id = any($2::uuid[]))', [trajectId, bestandIds(definitie)]);
+}
+
+/** Kopieert bestanden naar een ander traject en geeft de tabel van oude naar nieuwe sleutel terug. */
+export async function kopieerBestanden(ids, naarTrajectId) {
+	const tabel = new Map();
+	for (const id of ids) {
+		const { rows } = await query(
+			'insert into bestand (traject_id, naam, mime, inhoud) select $2, naam, mime, inhoud from bestand where id = $1 returning id',
+			[id, naarTrajectId],
+		);
+		if (rows[0]) tabel.set(id, rows[0].id);
+	}
+	return tabel;
+}
+
+/** Afbeeldingen als data-adres, om ze in het losse HTML-rapport op te nemen. */
+export async function beeldenAlsDataAdres(ids) {
+	if (!ids.length) return {};
+	const { rows } = await query("select id, mime, inhoud from bestand where id = any($1::uuid[]) and mime like 'image/%'", [ids]);
+	return Object.fromEntries(rows.map((r) => [r.id, `data:${r.mime};base64,${r.inhoud.toString('base64')}`]));
 }
 
 // ---- Bewaartermijn ----
@@ -181,6 +202,11 @@ export async function maakVoorbeeldAan() {
 			[voorbeeld.slug, voorbeeld.titel, voorbeeld.status, JSON.stringify(voorbeeld.definitie)],
 		);
 		const trajectId = rows[0].id;
+		// De schetsen van het voorbeeld, met vaste sleutels waar de opzet naar verwijst.
+		for (const beeld of VOORBEELD_BEELDEN) {
+			const inhoud = await readFile(new URL(`./seed/beelden/${beeld.bestand}`, import.meta.url));
+			await c.query('insert into bestand (id, traject_id, naam, mime, inhoud) values ($1, $2, $3, $4, $5)', [beeld.id, trajectId, beeld.bestand, 'image/png', inhoud]);
+		}
 		for (const inzending of gegevens.inzendingen) {
 			await bewaarInzending(
 				trajectId,

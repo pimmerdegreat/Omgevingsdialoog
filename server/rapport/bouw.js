@@ -178,7 +178,8 @@ function vragenDeel(g) {
 			if (!v.aantal) {
 				inhoud = '<p>Deze vraag is nog niet beantwoord.</p>';
 			} else if (v.type === 'keuze' || v.type === 'meerkeuze') {
-				inhoud = staven(v.opties, { totaal: v.aantal });
+				const metBeeld = v.opties.map((o) => ({ ...o, voor: o.beeld ? `<img class="optiebeeld" src="${e(o.beeld)}" alt="">` : '' }));
+				inhoud = staven(metBeeld, { totaal: v.aantal });
 			} else if (v.type === 'schaal') {
 				inhoud = `<p class="gemiddelde"><strong>${komma(v.gemiddelde)}</strong> gemiddeld${v.minLabel || v.maxLabel ? `, op een schaal van ${e(v.opties[0].label)} (${e(v.minLabel.toLowerCase())}) tot ${e(v.opties[v.opties.length - 1].label)} (${e(v.maxLabel.toLowerCase())})` : ''}</p>${staven(v.opties, { kleur: 'var(--oker)' })}`;
 			} else if (v.type === 'getal') {

@@ -11,9 +11,17 @@ Dialoogkaart is een eigen, slank alternatief voor Maptionnaire, gebouwd voor ong
 - punten, lijnen en vlakken op de kaart zetten, per categorie en met een toelichting;
 - per planonderdeel aangeven of zij het een goed idee vinden;
 - gewone vragen beantwoorden: één keuze, meer keuzes, schaal, open tekst of getal;
+- kiezen tussen ontwerpmodellen die als kaarten met afbeelding naast elkaar staan;
 - als zij dat willen postcode, leeftijdsgroep en e-mailadres achterlaten.
 
 **Jij als beheerder** maakt in beheer een traject aan en past alles zelf aan: teksten, startbeeld van de kaart, ondergronden, eigen kaartlagen, stappen, categorieën, planonderdelen en vragen. Planonderdelen teken je op de kaart of lees je in als GeoJSON uit QGIS.
+
+**Beelden en video's** staan in het linkerpaneel, ter ondersteuning van een stap of een vraag. De kaart blijft de kaart. Een klik opent een beeld of video groot in het midden van het scherm, met de rest donker erachter.
+
+- Per stap of per vraag: afbeeldingen (PNG, JPG of WebP) en YouTube-video's, met een bijschrift.
+- Per antwoord van een keuzevraag een afbeelding, om deelnemers tussen jullie modellen te laten kiezen. In het rapport staat het beeld van elk model naast de uitkomst.
+- Grote foto's worden bij het uploaden in de browser verkleind tot hoogstens 2000 pixels.
+- Een YouTube-video laadt pas als de deelnemer op afspelen klikt, via het domein van YouTube zonder cookies. Zonder die klik gaat er niets naar YouTube.
 
 **De resultaten** haal je op drie manieren op:
 

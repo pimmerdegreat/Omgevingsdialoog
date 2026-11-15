@@ -16,6 +16,7 @@ import { bijdragenGeojson } from './export/geojson.js';
 import { bouwGeopackage } from './export/gpkg.js';
 import { bouwRapport } from './rapport/bouw.js';
 import { rapportGegevens } from './rapport/gegevens.js';
+import { bestandIds, vervangBestandIds } from '../gedeeld/media.js';
 import { legeDefinitie } from './sjabloon.js';
 import { Invoerfout, valideerInzending, valideerTraject } from './validatie.js';
 
@@ -45,7 +46,7 @@ app.addHook('onSend', async (request, reply) => {
 	const insluiten = ['\'self\'', ...config.insluitenOp].join(' ');
 	reply.header(
 		'Content-Security-Policy',
-		`default-src 'self'; script-src ${script}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors ${insluiten}; base-uri 'self'; form-action 'self'`,
+		`default-src 'self'; script-src ${script}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.youtube-nocookie.com; frame-ancestors ${insluiten}; base-uri 'self'; form-action 'self'`,
 	);
 });
 
@@ -162,16 +163,22 @@ app.register(async (beheer) => {
 	beheer.post('/trajecten', async (request, reply) => {
 		const { titel, slug, kopie_van: kopieVan } = request.body || {};
 		let definitie = legeDefinitie();
+		let bron = null;
 		if (kopieVan) {
 			if (!UUID.test(kopieVan)) return nietGevonden(reply);
-			const bron = await data.trajectOpId(kopieVan);
+			bron = await data.trajectOpId(kopieVan);
 			if (!bron) return nietGevonden(reply);
-			// Kaartlagen verwijzen naar bestanden van het oorspronkelijke traject en gaan daarom niet mee.
-			definitie = { ...bron.definitie, kaart: { ...bron.definitie.kaart, lagen: [] } };
+			definitie = bron.definitie;
 		}
 		const invoer = valideerTraject({ titel, slug, status: 'concept', definitie });
 		if (await data.trajectOpSlug(invoer.slug)) return reply.code(409).send({ fout: 'Dit webadres is al in gebruik bij een ander traject.' });
-		return reply.code(201).send(await data.maakTraject(invoer));
+		let traject = await data.maakTraject(invoer);
+		if (bron) {
+			// Kaartlagen en beelden horen bij het oorspronkelijke traject: de kopie krijgt eigen exemplaren.
+			const tabel = await data.kopieerBestanden(bestandIds(invoer.definitie), traject.id);
+			traject = await data.wijzigTraject(traject.id, { ...invoer, definitie: vervangBestandIds(invoer.definitie, tabel) });
+		}
+		return reply.code(201).send(traject);
 	});
 
 	beheer.register(async (metTraject) => {
@@ -230,7 +237,8 @@ app.register(async (beheer) => {
 
 		metTraject.get('/trajecten/:id/rapport', async (request, reply) => {
 			const gegevens = await data.trajectGegevens(request.traject);
-			const html = await bouwRapport(rapportGegevens(gegevens, config.organisatie));
+			const beelden = await data.beeldenAlsDataAdres(bestandIds(request.traject.definitie));
+			const html = await bouwRapport(rapportGegevens(gegevens, config.organisatie, new Date(), beelden));
 			reply.rapport = true;
 			reply.header('Content-Type', 'text/html; charset=utf-8').header('Cache-Control', 'no-store');
 			if (request.query.download) reply.header('Content-Disposition', `attachment; filename="resultaten-${request.traject.slug}.html"`);

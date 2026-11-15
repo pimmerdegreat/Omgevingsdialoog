@@ -5,10 +5,12 @@ import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { boogSvg } from '../../../gedeeld/boog.js';
 import { LEEFTIJDEN, OORDELEN, VORMEN } from '../../../gedeeld/constanten.js';
-import { ApiFout, haalTraject, verstuurInzending } from '../api';
+import { ApiFout, bestandUrl, haalTraject, verstuurInzending } from '../api';
 import logo from '../../../gedeeld/buro-sro.png';
 import { midden } from '../kaart/geo';
 import KaartVlak from '../kaart/KaartVlak.vue';
+import Beeldvenster from '../onderdelen/Beeldvenster.vue';
+import MediaBlok from '../onderdelen/MediaBlok.vue';
 import { startTekenen, type Tekening } from '../kaart/tekenen';
 import type { Bijdrage, Categorie, Geometrie, Inzending, Onderdeel, Oordeel, PubliekTraject, Reactie, Stap, Vraag } from '../types';
 
@@ -282,6 +284,18 @@ function wisselKeuze(vraag: Vraag, optie: string) {
 	else delete antwoorden.value[vraag.id];
 }
 
+// Afbeeldingen bij antwoorden, bijvoorbeeld ontwerpmodellen om uit te kiezen.
+const beeldVan = (v: Vraag, optie: string) => (v.optieBeelden?.[optie] ? bestandUrl(v.optieBeelden[optie]) : '');
+const heeftBeelden = (v: Vraag) => v.opties.some((o) => beeldVan(v, o));
+const optieBeelden = ref<{ src: string; bijschrift: string }[]>([]);
+const optieGroot = ref<number | null>(null);
+
+function vergroot(v: Vraag, optie: string) {
+	const metBeeld = v.opties.filter((o) => beeldVan(v, o));
+	optieBeelden.value = metBeeld.map((o) => ({ src: beeldVan(v, o), bijschrift: o }));
+	optieGroot.value = metBeeld.indexOf(optie);
+}
+
 const schaal = (v: Vraag) => Array.from({ length: v.max - v.min + 1 }, (_, i) => v.min + i);
 
 function isLeeg(waarde: unknown) {
@@ -420,6 +434,7 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 			<!-- Tekenen -->
 			<section v-else-if="stap?.type === 'tekenen'">
 				<h1 tabindex="-1">{{ stap.titel }}</h1>
+				<MediaBlok v-if="stap.media?.length" :key="stap.id" :media="stap.media" />
 				<p v-for="a in alineas(stap.tekst)" :key="a">{{ a }}</p>
 				<ul class="categorieen">
 					<li v-for="c in stap.categorieen" :key="c.id">
@@ -457,6 +472,7 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 			<!-- Reageren op planonderdelen -->
 			<section v-else-if="stap?.type === 'reageren'">
 				<h1 tabindex="-1">{{ stap.titel }}</h1>
+				<MediaBlok v-if="stap.media?.length" :key="stap.id" :media="stap.media" />
 				<p v-for="a in alineas(stap.tekst)" :key="a">{{ a }}</p>
 				<ul class="onderdelen">
 					<li v-for="o in stap.onderdelen" :id="`onderdeel-${o.id}`" :key="o.id" :class="{ gekozen: gekozenOnderdeel === o.id }">
@@ -480,19 +496,27 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 			<!-- Vragen -->
 			<section v-else-if="stap?.type === 'vragen'">
 				<h1 tabindex="-1">{{ stap.titel }}</h1>
+				<MediaBlok v-if="stap.media?.length" :key="stap.id" :media="stap.media" />
 				<p v-for="a in alineas(stap.tekst)" :key="a">{{ a }}</p>
 				<div v-for="v in stap.vragen" :id="`vraag-${v.id}`" :key="v.id" class="vraag">
 					<fieldset v-if="v.type === 'keuze' || v.type === 'meerkeuze' || v.type === 'schaal'">
 						<legend>{{ v.label }} <span v-if="v.verplicht" class="verplicht">verplicht</span></legend>
+						<MediaBlok v-if="v.media?.length" :media="v.media" klein />
 						<p v-if="v.type === 'meerkeuze'" class="hint">Je kunt meer antwoorden kiezen.</p>
-						<template v-if="v.type === 'keuze'">
-							<label v-for="optie in v.opties" :key="optie" class="keuze"><input v-model="antwoorden[v.id]" type="radio" :name="v.id" :value="optie" /><span>{{ optie }}</span></label>
-						</template>
-						<template v-else-if="v.type === 'meerkeuze'">
-							<label v-for="optie in v.opties" :key="optie" class="keuze">
-								<input type="checkbox" :checked="Array.isArray(antwoorden[v.id]) && (antwoorden[v.id] as string[]).includes(optie)" @change="wisselKeuze(v, optie)" /><span>{{ optie }}</span>
-							</label>
-						</template>
+						<div v-if="v.type === 'keuze' || v.type === 'meerkeuze'" :class="heeftBeelden(v) ? 'beeldkeuzes' : 'keuzes'">
+							<div v-for="optie in v.opties" :key="optie" :class="beeldVan(v, optie) ? 'beeldkeuze-kaart' : 'keuze-rij'">
+								<!-- De vergrootknop staat naast het label: in een label zou een klik op de kaart de knop activeren. -->
+								<label class="keuze" :class="{ beeldkeuze: beeldVan(v, optie) }">
+									<span v-if="beeldVan(v, optie)" class="beeldkeuze-beeld"><img :src="beeldVan(v, optie)" alt="" loading="lazy" /></span>
+									<input v-if="v.type === 'keuze'" v-model="antwoorden[v.id]" type="radio" :name="v.id" :value="optie" />
+									<input v-else type="checkbox" :checked="Array.isArray(antwoorden[v.id]) && (antwoorden[v.id] as string[]).includes(optie)" @change="wisselKeuze(v, optie)" />
+									<span>{{ optie }}</span>
+								</label>
+								<button v-if="beeldVan(v, optie)" type="button" class="vergroot" :aria-label="`Vergroot de afbeelding van ${optie}`" @click="vergroot(v, optie)">
+									<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 3h5v5M8 17H3v-5M17 3l-6 6M3 17l6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+								</button>
+							</div>
+						</div>
 						<template v-else>
 							<div class="schaal" :style="{ '--aantal': v.max - v.min + 1 }">
 								<label v-for="n in schaal(v)" :key="n"><input v-model="antwoorden[v.id]" type="radio" :name="v.id" :value="n" /><span>{{ n }}</span></label>
@@ -502,6 +526,7 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 					</fieldset>
 					<div v-else class="veld">
 						<label :for="`invoer-${v.id}`">{{ v.label }} <span v-if="v.verplicht" class="verplicht">verplicht</span></label>
+						<MediaBlok v-if="v.media?.length" :media="v.media" klein />
 						<textarea v-if="v.type === 'tekst'" :id="`invoer-${v.id}`" v-model="antwoorden[v.id] as string" rows="4" maxlength="4000"></textarea>
 						<input v-else :id="`invoer-${v.id}`" v-model.number="antwoorden[v.id]" type="number" inputmode="decimal" />
 					</div>
@@ -562,5 +587,6 @@ onBeforeUnmount(() => tekening.value?.annuleer());
 			</div>
 		</footer>
 		</section>
+		<Beeldvenster v-model="optieGroot" :beelden="optieBeelden" />
 	</div>
 </template>

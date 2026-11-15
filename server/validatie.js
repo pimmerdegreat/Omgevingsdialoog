@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { BASISKAART_IDS } from '../gedeeld/basiskaarten.js';
 import { LEEFTIJDEN, OORDELEN, VORMEN } from '../gedeeld/constanten.js';
+import { youtubeId } from '../gedeeld/media.js';
 
 // Foutmeldingen van de controle in het Nederlands.
 z.config(z.locales.nl());
@@ -39,6 +40,16 @@ const onderdeelSchema = z.object({
 	geometrie: geometrieSchema,
 });
 
+// Beelden en video's bovenaan een stap.
+const mediaSchema = z.discriminatedUnion('type', [
+	z.object({ type: z.literal('afbeelding'), bestand_id: z.uuid(), bijschrift: z.string().max(200).default('') }),
+	z.object({
+		type: z.literal('video'),
+		youtube: z.string().refine((id) => youtubeId(id) === id, 'Dit is geen geldige YouTube-video'),
+		bijschrift: z.string().max(200).default(''),
+	}),
+]);
+
 const vraagSchema = z
 	.object({
 		id: sleutel,
@@ -50,6 +61,10 @@ const vraagSchema = z
 		max: z.number().int().min(1).max(10).default(5),
 		minLabel: z.string().max(60).default(''),
 		maxLabel: z.string().max(60).default(''),
+		// Een afbeelding per antwoordoptie, bijvoorbeeld om tussen ontwerpmodellen te laten kiezen.
+		optieBeelden: z.record(z.string(), z.uuid()).default({}),
+		// Beelden of een video die de vraag ondersteunen of verduidelijken.
+		media: z.array(mediaSchema).max(4).default([]),
 	})
 	.refine((v) => !['keuze', 'meerkeuze'].includes(v.type) || v.opties.length >= 2, {
 		message: 'Een keuzevraag heeft minstens twee antwoordopties nodig',
@@ -60,6 +75,7 @@ const stapBasis = {
 	id: sleutel,
 	titel: z.string().trim().min(1).max(120),
 	tekst: z.string().max(3000).default(''),
+	media: z.array(mediaSchema).max(8).default([]),
 };
 
 const stapSchema = z.discriminatedUnion('type', [

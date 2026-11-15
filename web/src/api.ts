@@ -9,8 +9,12 @@ export const DEMO_TRAJECT_ID = '00000000-0000-4000-a000-000000000001';
 
 const demo = () => import('./demo');
 
-/** Kaartlagen die in de demo in deze browser zijn geüpload. */
+/** Bestanden in de demo: de schetsen van het voorbeeld en wat in deze browser is geüpload. */
 const demoBestanden = new Map<string, string>();
+
+export function registreerDemoBestand(id: string, adres: string) {
+	demoBestanden.set(id, adres);
+}
 
 export class ApiFout extends Error {
 	status: number;
