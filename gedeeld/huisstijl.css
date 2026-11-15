@@ -1,0 +1,181 @@
+/* Huisstijl van Dialoogkaart, afgeleid van Buro SRO: donkerblauw, oker en groen op warm papier.
+   Gedeeld door de website en het resultatenrapport. Vlak ontwerp: geen verlopen, schaduwen of glas. */
+
+:root {
+	--papier: #f6f3ec;
+	--vlak: #ebe6da;
+	--vlak-diep: #ddd6c6;
+	--wit: #ffffff;
+	--inkt: #17293a;
+	--inkt-zacht: #4a5966;
+	--blauw: #224362;
+	--oker: #d59800;
+	--groen: #7e9d45;
+	--rood: #b4472f;
+	--letter: 'Archivo Variable', Arial, Helvetica, sans-serif;
+	--hoek: 3px;
+	--marge: clamp(20px, 5vw, 72px);
+	--focus: 0 0 0 3px var(--papier), 0 0 0 6px var(--blauw);
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--papier);
+	color: var(--inkt);
+	font-family: var(--letter);
+	font-size: 1.0625rem;
+	line-height: 1.55;
+	font-variant-numeric: tabular-nums;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-weight: 800;
+	font-stretch: 110%;
+	line-height: 1.05;
+	letter-spacing: -0.012em;
+	text-wrap: balance;
+}
+
+h1 {
+	font-size: clamp(2.1rem, 4.6vw, 4rem);
+}
+
+h2 {
+	font-size: clamp(1.55rem, 2.6vw, 2.3rem);
+}
+
+h3 {
+	font-size: 1.2rem;
+	font-stretch: 105%;
+	line-height: 1.2;
+}
+
+p {
+	margin: 0 0 1em;
+	max-width: 68ch;
+	text-wrap: pretty;
+}
+
+a {
+	color: var(--blauw);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 3px;
+}
+
+a:hover {
+	text-decoration-color: var(--oker);
+}
+
+:focus-visible {
+	outline: none;
+	box-shadow: var(--focus);
+	border-radius: var(--hoek);
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+.knop {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5em;
+	min-height: 2.9rem;
+	padding: 0.6rem 1.25rem;
+	border: 0;
+	border-radius: var(--hoek);
+	background: var(--blauw);
+	color: var(--wit);
+	font-weight: 700;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.knop:hover {
+	background: var(--inkt);
+}
+
+.knop:active {
+	transform: translateY(1px);
+}
+
+.knop[disabled] {
+	background: var(--vlak-diep);
+	color: var(--inkt-zacht);
+	cursor: not-allowed;
+}
+
+.knop-stil {
+	background: var(--vlak);
+	color: var(--inkt);
+}
+
+.knop-stil:hover {
+	background: var(--vlak-diep);
+}
+
+.knop-oker {
+	background: var(--oker);
+	color: var(--inkt);
+}
+
+.knop-oker:hover {
+	background: #e3a91b;
+}
+
+.knop-gevaar {
+	background: var(--rood);
+}
+
+.knop-gevaar:hover {
+	background: #92351f;
+}
+
+.knop-klein {
+	min-height: 2.3rem;
+	padding: 0.35rem 0.85rem;
+	font-size: 0.95rem;
+}
+
+/* De boog uit het logo van Buro SRO als kaartmarkering. */
+.boog {
+	display: block;
+	width: 28px;
+	height: 37px;
+}
+
+.boog-klein {
+	width: 18px;
+	height: 24px;
+	flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+# Wordt aangemaakt door "npm run demo"
+web/public/demo/
+*.log
