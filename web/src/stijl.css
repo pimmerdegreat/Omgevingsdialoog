@@ -1671,6 +1671,35 @@ fieldset {
 	transform: scale(1.08);
 }
 
+/* Video met voorbeeldbeeld: het beeld met de afspeelknop erop. */
+.videoknop.met-voorbeeld {
+	display: block;
+	padding: 0;
+	background: #000;
+}
+
+.videoknop.met-voorbeeld .speel {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.videoknop.met-voorbeeld:hover .speel {
+	transform: translate(-50%, -50%) scale(1.08);
+}
+
+.videoknop.met-voorbeeld small {
+	position: absolute;
+	inset: auto 0 0;
+	max-width: none;
+	padding: 1.75rem 4.5rem 0.55rem 0.75rem;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+	color: #fff;
+	text-align: left;
+	opacity: 1;
+}
+
 .vergroot-teken {
 	position: absolute;
 	top: 8px;
@@ -1910,12 +1939,23 @@ fieldset {
 }
 
 .video-duim {
+	position: relative;
 	display: grid;
 	place-items: center;
+	overflow: hidden;
 	background: var(--blauw);
 }
 
+.video-duim img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
 .video-duim .speel {
+	position: relative;
 	width: 28px;
 	height: 28px;
 }

@@ -22,6 +22,7 @@ Dialoogkaart is een eigen, slank alternatief voor Maptionnaire, gebouwd voor ong
 - Per antwoord van een keuzevraag een afbeelding, om deelnemers tussen jullie modellen te laten kiezen. In het rapport staat het beeld van elk model naast de uitkomst.
 - Grote foto's worden bij het uploaden in de browser verkleind tot hoogstens 2000 pixels.
 - Een YouTube-video laadt pas als de deelnemer op afspelen klikt, via het domein van YouTube zonder cookies. YouTube krijgt dan alleen het domein van de site te zien, niet het adres van de pagina; zonder dat domein weigert YouTube af te spelen (Error 153). Zonder die klik gaat er niets naar YouTube.
+- Het voorbeeldbeeld van een video haalt de server één keer bij YouTube op, als je de video in beheer toevoegt. Deelnemers zien de kopie van de eigen server. Lukt het ophalen niet, dan staat er een blauwe afspeelknop.
 
 **De resultaten** haal je op drie manieren op:
 

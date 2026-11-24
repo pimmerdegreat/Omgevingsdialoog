@@ -89,6 +89,11 @@ export const beheer = {
 		formulier.append('bestand', bestand, naam);
 		return verzoek<{ id: string; naam: string; mime: string }>(`beheer/trajecten/${id}/bestanden`, { method: 'POST', body: formulier });
 	},
+	/** Laat de server het voorbeeldbeeld van een YouTube-video ophalen en bewaren. */
+	youtubeVoorbeeld: async (id: string, youtube: string) =>
+		DEMO
+			? (await demo()).youtubeVoorbeeld(id, youtube, demoBestanden)
+			: verzoek<{ id: string; naam: string; mime: string }>(`beheer/trajecten/${id}/youtube-voorbeeld`, json('POST', { youtube })),
 	qgis: async () =>
 		DEMO ? (await demo()).qgis() : verzoek<{ ingesteld: boolean; database: string; poort: number; gebruiker: string; schema: string; lagen: string[] }>('beheer/qgis'),
 	/** Zet de demo terug naar de beginstand. Doet niets buiten de demo. */

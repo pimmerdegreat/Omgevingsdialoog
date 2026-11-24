@@ -34,18 +34,31 @@ export function youtubeInsluiten(id) {
 	return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
 }
 
+/**
+ * Adressen van het voorbeeldbeeld van een YouTube-video, van groot naar klein. Niet elke video heeft de grote varianten.
+ * Alleen de server haalt deze op, één keer bij het toevoegen; deelnemers krijgen de kopie van de eigen server.
+ */
+export function youtubeVoorbeeldUrls(id) {
+	return ['maxresdefault.jpg', 'hq720.jpg', 'mqdefault.jpg'].map((naam) => `https://i.ytimg.com/vi/${id}/${naam}`);
+}
+
 /** Alle bestanden waar de opzet van een traject naar verwijst: kaartlagen, beelden per stap en beelden per antwoord. */
 export function bestandIds(definitie) {
 	const ids = new Set();
 	for (const laag of definitie?.kaart?.lagen || []) ids.add(laag.bestand_id);
 	for (const stap of definitie?.stappen || []) {
-		for (const m of stap.media || []) if (m.type === 'afbeelding') ids.add(m.bestand_id);
+		for (const m of stap.media || []) mediaIds(m, ids);
 		for (const vraag of stap.vragen || []) {
 			for (const id of Object.values(vraag.optieBeelden || {})) ids.add(id);
-			for (const m of vraag.media || []) if (m.type === 'afbeelding') ids.add(m.bestand_id);
+			for (const m of vraag.media || []) mediaIds(m, ids);
 		}
 	}
 	return [...ids];
+}
+
+function mediaIds(m, ids) {
+	if (m.type === 'afbeelding') ids.add(m.bestand_id);
+	else if (m.voorbeeld_id) ids.add(m.voorbeeld_id);
 }
 
 /**
@@ -56,8 +69,14 @@ export function vervangBestandIds(definitie, tabel) {
 	const nieuw = structuredClone(definitie);
 	const map = tabel instanceof Map ? tabel : new Map(Object.entries(tabel));
 	nieuw.kaart.lagen = (nieuw.kaart.lagen || []).filter((l) => map.has(l.bestand_id)).map((l) => ({ ...l, bestand_id: map.get(l.bestand_id) }));
+	const vervangVideo = (m) => {
+		const { voorbeeld_id: voorbeeld, ...rest } = m;
+		return voorbeeld && map.has(voorbeeld) ? { ...rest, voorbeeld_id: map.get(voorbeeld) } : rest;
+	};
 	const vervangMedia = (lijst) =>
-		lijst.filter((m) => m.type !== 'afbeelding' || map.has(m.bestand_id)).map((m) => (m.type === 'afbeelding' ? { ...m, bestand_id: map.get(m.bestand_id) } : m));
+		lijst
+			.filter((m) => m.type !== 'afbeelding' || map.has(m.bestand_id))
+			.map((m) => (m.type === 'afbeelding' ? { ...m, bestand_id: map.get(m.bestand_id) } : vervangVideo(m)));
 	for (const stap of nieuw.stappen) {
 		if (stap.media) stap.media = vervangMedia(stap.media);
 		for (const vraag of stap.vragen || []) {

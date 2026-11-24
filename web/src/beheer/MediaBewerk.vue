@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Beelden en video's toevoegen aan een stap of een vraag. Foto's worden eerst in de browser verkleind.
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { youtubeId } from '../../../gedeeld/media.js';
 import { beheer, bestandUrl } from '../api';
 import type { Media } from '../types';
@@ -69,7 +69,24 @@ function voegVideoToe() {
 	}
 	lijst().push({ type: 'video', youtube: id, bijschrift: '' });
 	link.value = '';
+	haalVoorbeeld(lijst()[lijst().length - 1]);
 }
+
+/** Laat de server het voorbeeldbeeld van de video kopiëren. Lukt dat niet, dan blijft de video gewoon werken. */
+async function haalVoorbeeld(m: Media) {
+	if (m.type !== 'video' || m.voorbeeld_id) return;
+	try {
+		const { id } = await beheer.youtubeVoorbeeld(props.trajectId, m.youtube);
+		m.voorbeeld_id = id;
+	} catch {
+		// Zonder voorbeeldbeeld toont de site de blauwe afspeelknop.
+	}
+}
+
+// Video's die zijn toegevoegd voordat er voorbeeldbeelden waren, krijgen er alsnog een.
+onMounted(() => {
+	for (const m of props.doel.media || []) haalVoorbeeld(m);
+});
 </script>
 
 <template>
@@ -82,7 +99,10 @@ function voegVideoToe() {
 				<li v-for="(m, nr) in doel.media" :key="(m.type === 'afbeelding' ? m.bestand_id : m.youtube) + nr">
 					<div class="media-rij">
 						<img v-if="m.type === 'afbeelding'" :src="bestandUrl(m.bestand_id)" class="media-duim" alt="" />
-						<span v-else class="media-duim video-duim" aria-hidden="true"><span class="speel"></span></span>
+						<span v-else class="media-duim video-duim" aria-hidden="true">
+							<img v-if="m.voorbeeld_id" :src="bestandUrl(m.voorbeeld_id)" alt="" />
+							<span class="speel"></span>
+						</span>
 						<div class="veld breed">
 							<label :for="`bijschrift-${ids.veld}-${nr}`">Bijschrift</label>
 							<input :id="`bijschrift-${ids.veld}-${nr}`" v-model="m.bijschrift" type="text" maxlength="200" />

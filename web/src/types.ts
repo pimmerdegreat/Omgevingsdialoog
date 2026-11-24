@@ -25,7 +25,7 @@ export interface Onderdeel {
 }
 
 /** Een afbeelding of YouTube-video bovenaan een stap. */
-export type Media = { type: 'afbeelding'; bestand_id: string; bijschrift: string } | { type: 'video'; youtube: string; bijschrift: string };
+export type Media = { type: 'afbeelding'; bestand_id: string; bijschrift: string } | { type: 'video'; youtube: string; bijschrift: string; voorbeeld_id?: string };
 
 export type Vraagtype = 'keuze' | 'meerkeuze' | 'schaal' | 'tekst' | 'getal';
 

@@ -28,15 +28,26 @@ test('bestandsverwijzingen van kaartlagen, stappen, vragen en antwoorden worden 
 	const laag = '11111111-1111-4111-a111-111111111111';
 	const vraagBeeld = '22222222-2222-4222-a222-222222222222';
 	def.kaart.lagen = [{ id: 'plan', titel: 'Plan', type: 'geojson', bestand_id: laag, kleur: '#224362', dekking: 0.8 }];
-	def.stappen[2].vragen[0].media = [{ type: 'afbeelding', bestand_id: vraagBeeld, bijschrift: '' }, { type: 'video', youtube: CODE, bijschrift: '' }];
+	const videoBeeld = '33333333-3333-4333-a333-333333333333';
+	def.stappen[2].vragen[0].media = [
+		{ type: 'afbeelding', bestand_id: vraagBeeld, bijschrift: '' },
+		{ type: 'video', youtube: CODE, bijschrift: '' },
+		{ type: 'video', youtube: CODE, bijschrift: '', voorbeeld_id: videoBeeld },
+	];
 	const ids = bestandIds(def);
-	assert.deepEqual(new Set(ids), new Set([laag, vraagBeeld, ...VOORBEELD_BEELDEN.map((b) => b.id)]));
+	assert.deepEqual(new Set(ids), new Set([laag, vraagBeeld, videoBeeld, ...VOORBEELD_BEELDEN.map((b) => b.id)]));
 
 	// Alleen de kaartlaag en het overzicht krijgen een nieuwe sleutel; de rest valt weg.
 	const nieuw = vervangBestandIds(def, { [laag]: 'nieuw-1', [VOORBEELD_BEELDEN[0].id]: 'nieuw-2' });
 	assert.equal(nieuw.kaart.lagen[0].bestand_id, 'nieuw-1');
 	assert.equal(nieuw.stappen[1].media[0].bestand_id, 'nieuw-2');
-	assert.deepEqual(nieuw.stappen[2].vragen[0].media, [{ type: 'video', youtube: CODE, bijschrift: '' }]);
+	// Een video blijft staan; alleen het voorbeeldbeeld valt weg als het niet is gekopieerd.
+	assert.deepEqual(nieuw.stappen[2].vragen[0].media, [
+		{ type: 'video', youtube: CODE, bijschrift: '' },
+		{ type: 'video', youtube: CODE, bijschrift: '' },
+	]);
+	const metVoorbeeld = vervangBestandIds(def, { [videoBeeld]: 'nieuw-3' });
+	assert.equal(metVoorbeeld.stappen[2].vragen[0].media[1].voorbeeld_id, 'nieuw-3');
 	assert.deepEqual(nieuw.stappen[2].vragen.find((v) => v.id === 'plein').optieBeelden, {});
 	assert.equal(def.kaart.lagen[0].bestand_id, laag, 'het origineel blijft ongewijzigd');
 });
@@ -46,8 +57,14 @@ test('beelden en video bij stappen en vragen worden gecontroleerd', () => {
 	const metVideo = structuredClone(t.definitie);
 	metVideo.stappen[0].media = [{ type: 'video', youtube: CODE, bijschrift: 'Uitleg' }];
 	metVideo.stappen[2].vragen[0].media = [{ type: 'video', youtube: CODE }];
+	metVideo.stappen[1].media = [{ type: 'video', youtube: CODE, voorbeeld_id: '33333333-3333-4333-a333-333333333333' }];
 	const geldig = valideerTraject({ titel: t.titel, slug: t.slug, status: 'open', definitie: metVideo });
 	assert.equal(geldig.definitie.stappen[2].vragen[0].media[0].bijschrift, '');
+	assert.equal(geldig.definitie.stappen[1].media[0].voorbeeld_id, '33333333-3333-4333-a333-333333333333', 'het voorbeeldbeeld blijft bewaard');
+
+	const foutVoorbeeld = structuredClone(t.definitie);
+	foutVoorbeeld.stappen[0].media = [{ type: 'video', youtube: CODE, voorbeeld_id: 'https://i.ytimg.com/vi/x/hq.jpg' }];
+	assert.throws(() => valideerTraject({ titel: t.titel, slug: t.slug, status: 'open', definitie: foutVoorbeeld }), Invoerfout, 'alleen een eigen bestand mag');
 
 	const fout = structuredClone(t.definitie);
 	fout.stappen[0].media = [{ type: 'video', youtube: 'https://vimeo.com/1' }];

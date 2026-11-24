@@ -10,7 +10,11 @@ import Beeldvenster, { type Beeld } from './Beeldvenster.vue';
 const props = defineProps<{ media: Media[]; klein?: boolean }>();
 
 const items = computed<Beeld[]>(() =>
-	props.media.map((m) => (m.type === 'afbeelding' ? { src: bestandUrl(m.bestand_id), bijschrift: m.bijschrift } : { youtube: m.youtube, bijschrift: m.bijschrift })),
+	props.media.map((m) =>
+		m.type === 'afbeelding'
+			? { src: bestandUrl(m.bestand_id), bijschrift: m.bijschrift }
+			: { youtube: m.youtube, voorbeeld: m.voorbeeld_id ? bestandUrl(m.voorbeeld_id) : undefined, bijschrift: m.bijschrift },
+	),
 );
 const groot = ref<number | null>(null);
 </script>
@@ -30,6 +34,18 @@ const groot = ref<number | null>(null);
 					<span class="vergroot-teken" aria-hidden="true">
 						<svg viewBox="0 0 20 20"><path d="M12 3h5v5M8 17H3v-5M17 3l-6 6M3 17l6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
 					</span>
+					<span v-if="items.length > 1" class="teller">{{ i + 1 }} / {{ items.length }}</span>
+				</button>
+				<button
+					v-else-if="b.voorbeeld"
+					type="button"
+					class="beeldknop videoknop met-voorbeeld"
+					:aria-label="`Video afspelen${b.bijschrift ? ': ' + b.bijschrift : ''}`"
+					@click="groot = i"
+				>
+					<img :src="b.voorbeeld" alt="" loading="lazy" />
+					<span class="speel" aria-hidden="true"></span>
+					<small>Video van YouTube. Bij afspelen maakt je browser verbinding met YouTube.</small>
 					<span v-if="items.length > 1" class="teller">{{ i + 1 }} / {{ items.length }}</span>
 				</button>
 				<button v-else type="button" class="beeldknop videoknop" :aria-label="`Video afspelen${b.bijschrift ? ': ' + b.bijschrift : ''}`" @click="groot = i">

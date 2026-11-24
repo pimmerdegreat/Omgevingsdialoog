@@ -16,7 +16,7 @@ import { bijdragenGeojson } from './export/geojson.js';
 import { bouwGeopackage } from './export/gpkg.js';
 import { bouwRapport } from './rapport/bouw.js';
 import { rapportGegevens } from './rapport/gegevens.js';
-import { bestandIds, vervangBestandIds } from '../gedeeld/media.js';
+import { bestandIds, vervangBestandIds, youtubeId, youtubeVoorbeeldUrls } from '../gedeeld/media.js';
 import { legeDefinitie } from './sjabloon.js';
 import { Invoerfout, valideerInzending, valideerTraject } from './validatie.js';
 
@@ -219,6 +219,26 @@ app.register(async (beheer) => {
 			}
 			if (!mime) throw new Invoerfout('Dit bestand is geen PNG, JPG, WebP of GeoJSON.');
 			return reply.code(201).send(await data.bewaarBestand(request.traject.id, { naam, mime, inhoud }));
+		});
+
+		// Haalt het voorbeeldbeeld van een YouTube-video één keer op en bewaart het als eigen bestand.
+		// Deelnemers zien daarna de kopie van deze server; hun browser maakt pas bij afspelen verbinding met YouTube.
+		metTraject.post('/trajecten/:id/youtube-voorbeeld', async (request, reply) => {
+			const code = request.body?.youtube;
+			if (typeof code !== 'string' || youtubeId(code) !== code) throw new Invoerfout('Dit is geen geldige YouTube-video.');
+			for (const adres of youtubeVoorbeeldUrls(code)) {
+				try {
+					const antwoord = await fetch(adres, { signal: AbortSignal.timeout(8000) });
+					if (!antwoord.ok) continue;
+					const inhoud = Buffer.from(await antwoord.arrayBuffer());
+					const jpeg = inhoud[0] === 0xff && inhoud[1] === 0xd8 && inhoud[2] === 0xff;
+					if (!jpeg || inhoud.length > 2 * 1024 * 1024) continue;
+					return reply.code(201).send(await data.bewaarBestand(request.traject.id, { naam: `youtube-${code}.jpg`, mime: 'image/jpeg', inhoud }));
+				} catch (fout) {
+					request.log.warn({ err: fout }, 'Voorbeeldbeeld van YouTube niet opgehaald');
+				}
+			}
+			return reply.code(502).send({ fout: 'Het voorbeeldbeeld kon niet bij YouTube worden opgehaald. De video werkt wel.' });
 		});
 
 		metTraject.get('/trajecten/:id/inzendingen', async (request) => {

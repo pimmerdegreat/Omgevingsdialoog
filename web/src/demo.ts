@@ -247,6 +247,25 @@ export async function uploadBestand(id: string, bestand: Blob, naam: string, geh
 	return { id: bestandId, naam, mime };
 }
 
+/**
+ * In de demo is er geen server die het voorbeeldbeeld kan kopiëren. Het beeld komt daarom rechtstreeks van YouTube;
+ * op de echte server bewaart de server een eigen kopie.
+ */
+export async function youtubeVoorbeeld(id: string, youtube: string, geheugen: Map<string, string>) {
+	const { o } = await laad();
+	vereisInlog(o);
+	vind(o, id);
+	const bestandId = crypto.randomUUID();
+	const adres = `https://i.ytimg.com/vi/${youtube}/mqdefault.jpg`;
+	geheugen.set(bestandId, adres);
+	try {
+		localStorage.setItem(BESTAND_VOORVOEGSEL + bestandId, adres);
+	} catch {
+		// Geen opslag: blijft beschikbaar tot de pagina sluit.
+	}
+	return { id: bestandId, naam: `youtube-${youtube}.jpg`, mime: 'image/jpeg' };
+}
+
 export async function qgis() {
 	return { ingesteld: false, database: 'dialoogkaart', poort: 5432, gebruiker: 'qgis_lezer', schema: 'qgis', lagen: [] as string[] };
 }

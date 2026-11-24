@@ -47,6 +47,8 @@ const mediaSchema = z.discriminatedUnion('type', [
 		type: z.literal('video'),
 		youtube: z.string().refine((id) => youtubeId(id) === id, 'Dit is geen geldige YouTube-video'),
 		bijschrift: z.string().max(200).default(''),
+		// Kopie van het voorbeeldbeeld op de eigen server, zodat het tonen ervan niets naar YouTube stuurt.
+		voorbeeld_id: z.uuid().optional(),
 	}),
 ]);
 

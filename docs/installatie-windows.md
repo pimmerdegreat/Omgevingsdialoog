@@ -74,6 +74,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Laat `HOST=127.0.0.1` staan. De server is dan alleen via de proxy bereikbaar.
 
+De server moet zelf naar buiten kunnen via https naar `i.ytimg.com`. Daar haalt hij het voorbeeldbeeld van een YouTube-video op als je die in beheer toevoegt. Lukt dat niet, dan werkt de video wel, maar zonder voorbeeldbeeld.
+
 ## 6. Proefdraaien
 
 ```

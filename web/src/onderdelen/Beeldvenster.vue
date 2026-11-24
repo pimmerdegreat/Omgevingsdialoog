@@ -9,6 +9,8 @@ export interface Beeld {
 	src?: string;
 	/** Code van een YouTube-video. */
 	youtube?: string;
+	/** Voorbeeldbeeld van de video, van de eigen server. */
+	voorbeeld?: string;
 	bijschrift: string;
 }
 
