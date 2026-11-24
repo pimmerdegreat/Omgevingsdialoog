@@ -67,6 +67,7 @@ onBeforeUnmount(() => {
 						:title="beelden[nummer].bijschrift || 'Video'"
 						allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
 						allowfullscreen
+						referrerpolicy="strict-origin-when-cross-origin"
 					></iframe>
 				</div>
 				<img v-else :src="beelden[nummer].src" :alt="beelden[nummer].bijschrift" />
