@@ -313,7 +313,15 @@ app.get('/p/:slug', async (request, reply) => {
 
 const webmap = fileURLToPath(new URL('../dist/web', import.meta.url));
 if (existsSync(webmap)) {
-	await app.register(fastifyStatic, { root: webmap, maxAge: '1h' });
+	// index.html altijd opnieuw controleren, zodat een bijgewerkte site direct zichtbaar is. De bestanden in assets/
+	// hebben een kenmerk in hun naam dat bij elke wijziging verandert; die mogen lang bewaard blijven.
+	await app.register(fastifyStatic, {
+		root: webmap,
+		cacheControl: false,
+		setHeaders: (reply, pad) => {
+			reply.header('Cache-Control', /[\\/]assets[\\/]/.test(pad) ? 'public, max-age=31536000, immutable' : 'no-cache');
+		},
+	});
 	app.setNotFoundHandler((request, reply) => {
 		if (request.method !== 'GET' || request.url.startsWith('/api/')) return reply.code(404).send({ fout: 'Niet gevonden.' });
 		return reply.code(404).send({ fout: 'Niet gevonden.' });
